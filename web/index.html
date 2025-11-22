@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circuit Breaker Token - Liquidation Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 Circuit Breaker Token</h1>
+            <p class="subtitle">Progressive Liquidation Dashboard</p>
+            <div id="wallet-info" class="wallet-info">
+                <button id="connect-wallet" class="btn btn-primary">Connect Wallet</button>
+                <div id="connected-wallet" class="connected-wallet" style="display: none;">
+                    <span id="wallet-address"></span>
+                    <button id="disconnect-wallet" class="btn btn-secondary">Disconnect</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="network-info" id="network-info" style="display: none;">
+            <p>📡 Network: <strong id="network-name">Unknown</strong></p>
+            <p>⏰ Current Block: <strong id="current-block">-</strong></p>
+        </div>
+
+        <main>
+            <!-- Create Loan Section -->
+            <section class="card">
+                <h2>💰 Create Test Loan</h2>
+                <p class="info-text">Create a new loan position for testing the circuit breaker mechanism</p>
+                <div class="form-group">
+                    <label for="collateral-amount">Collateral Amount (cWBTC):</label>
+                    <input type="number" id="collateral-amount" placeholder="50" value="50">
+                </div>
+                <div class="form-group">
+                    <label for="health-factor">Health Factor (%):</label>
+                    <input type="number" id="health-factor" placeholder="80" value="80" min="0" max="100">
+                    <small>Below 100% = Liquidatable</small>
+                </div>
+                <button id="create-loan" class="btn btn-primary">Create Loan Position</button>
+            </section>
+
+            <!-- Liquidatable Positions Section -->
+            <section class="card">
+                <h2>🎯 Liquidatable Positions</h2>
+                <p class="info-text">Positions eligible for progressive liquidation</p>
+                <div id="positions-list" class="positions-list">
+                    <div class="loading">
+                        <p>Connect your wallet to view liquidatable positions</p>
+                    </div>
+                </div>
+                <button id="refresh-positions" class="btn btn-secondary" style="margin-top: 1rem;">
+                    Refresh Positions
+                </button>
+            </section>
+
+            <!-- How It Works -->
+            <section class="card info-card">
+                <h2>ℹ️ How Circuit Breaker Works</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h3>1. Cooldown Period</h3>
+                        <p>When liquidation is initiated, there's a 5-block cooldown where 0% can be liquidated. This gives users time to respond.</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>2. Progressive Window</h3>
+                        <p>After cooldown, liquidatable amount grows from 10% to 100% over 5 blocks, preventing instant full liquidation.</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>3. Wallet Balance Protection</h3>
+                        <p>If user has funds in wallet, they get reduced caps that decay over time, balancing protection with accountability.</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>4. Execute Liquidation</h3>
+                        <p>Liquidators can only seize the allowed percentage at each block, creating a fairer liquidation process.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Built for Bitcoin-focused protocols: Zircuit, Rootstock, Citrea</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
