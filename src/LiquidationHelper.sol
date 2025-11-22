@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.20;
 
 contract Helper {
-    // storage slot 0 is A.hasFailed
+    // slot 5 used for `firstLiquidationAttemptDone` in Wrapper
+    uint256 constant FLAG_SLOT = 5;
+
     function markFailed() external {
         assembly {
-            sstore(0, 1)       // write hasFailed = true
-            revert(0, 0)       // revert only delegatecall frame
+            sstore(FLAG_SLOT, 1)
+            revert(0, 0)
         }
     }
 }
