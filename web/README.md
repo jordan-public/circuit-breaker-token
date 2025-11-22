@@ -71,10 +71,10 @@ A web-based dashboard for interacting with the Circuit Breaker Token liquidation
 1. View the position in "Liquidatable Positions" section
 2. When position shows "Liquidatable" status, click "Initiate Liquidation"
 3. Approve the transaction
-4. Position enters cooldown period (5 blocks)
+4. Position enters cooldown period (15 blocks)
 
 #### Execute Liquidation
-1. After cooldown, the liquidation window opens (5 blocks)
+1. After cooldown, the liquidation window opens (15 blocks)
 2. The interface shows the current liquidatable percentage (10% → 100%)
 3. Click the liquidation button showing percentage and amount
 4. Approve the transaction to seize the collateral
@@ -92,7 +92,7 @@ A web-based dashboard for interacting with the Circuit Breaker Token liquidation
 
 The progress bar shows how much of the position can be liquidated:
 - **10%** at start of window
-- Increases linearly over 5 blocks
+- Increases linearly over 15 blocks
 - **100%** at end of window
 
 Actual percentage may be capped based on user's wallet balance.
