@@ -3,23 +3,66 @@ pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+/// @notice Interface for protocols to determine if a user position can be liquidated
+interface ILiquidationTarget {
+    /// @notice Check if a user's position is eligible for liquidation
+    /// @param user The user address to check
+    /// @return true if the position can be liquidated, false otherwise
+    function canLiquidate(address user) external view returns (bool);
+}
+
 /// @title Circuit-Breaker WETH (cWETH)
 contract cWETH is ERC20 {
     // ERC20 uses slots 0-4 (_balances, _allowances, _totalSupply, _name, _symbol)
     mapping(address => mapping(address => uint256)) public approvalBlock;         // slot 5
     mapping(address => uint256) public liquidationBlockedUntil;                  // slot 6
+    mapping(address => uint256) public liquidationWindowEnd;                     // slot 7
 
     uint256 public immutable cooldownBlocks;
+    uint256 public immutable liquidationWindow;
+    ILiquidationTarget public immutable liquidationTarget;
 
-    constructor(uint256 _cooldown)
+    event LiquidationInitiated(address indexed user, uint256 canLiquidateAt, uint256 windowEndsAt);
+
+    constructor(uint256 _cooldown, uint256 _liquidationWindow, address _liquidationTarget)
         ERC20("Circuit Breaker WETH", "cWETH")
     {
         cooldownBlocks = _cooldown;
+        liquidationWindow = _liquidationWindow;
+        liquidationTarget = ILiquidationTarget(_liquidationTarget);
     }
 
     /// @notice Mint tokens (for testing purposes)
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
+    }
+
+    /// @notice Initiate liquidation for a user, starting the cooldown period
+    /// @param user The user whose position may be liquidated
+    function initiateLiquidation(address user) external {
+        // Check if the position is actually liquidatable
+        require(liquidationTarget.canLiquidate(user), "Position not liquidatable");
+        
+        uint256 existingCooldown = liquidationBlockedUntil[user];
+        
+        // Check if liquidation window has expired, if so, allow re-initiation
+        if (existingCooldown != 0) {
+            uint256 existingWindowEnd = liquidationWindowEnd[user];
+            if (block.number <= existingWindowEnd) {
+                revert("Liquidation already initiated");
+            }
+            // Window expired, clean up old state
+            delete liquidationBlockedUntil[user];
+            delete liquidationWindowEnd[user];
+        }
+        
+        uint256 canLiquidateAt = block.number + cooldownBlocks;
+        uint256 windowEnds = canLiquidateAt + liquidationWindow;
+        
+        liquidationBlockedUntil[user] = canLiquidateAt;
+        liquidationWindowEnd[user] = windowEnds;
+        
+        emit LiquidationInitiated(user, canLiquidateAt, windowEnds);
     }
 
     function approve(address spender, uint256 amount)
@@ -53,22 +96,29 @@ contract cWETH is ERC20 {
             return;
         }
 
-        uint256 blocked = liquidationBlockedUntil[from];
+        uint256 canLiquidateAt = liquidationBlockedUntil[from];
+        uint256 windowEnds = liquidationWindowEnd[from];
 
-        if (blocked == 0) {
-            // First liquidation attempt - set the cooldown and return WITHOUT transferring
-            liquidationBlockedUntil[from] = block.number + cooldownBlocks;
-            // Don't call super._update, so no transfer happens
-            // Just return silently (transfer of 0 tokens)
-            return;
+        if (canLiquidateAt == 0) {
+            // No liquidation initiated - block the transfer
+            revert("CircuitBreaker: must initiate liquidation first");
         }
 
-        if (block.number < blocked) {
-            // During cooldown period - revert
-            revert("CircuitBreaker: liquidation blocked");
+        if (block.number < canLiquidateAt) {
+            // Still in cooldown period - block the transfer
+            revert("CircuitBreaker: liquidation in cooldown");
+        }
+
+        if (block.number > windowEnds) {
+            // Window expired - reset and block the transfer
+            delete liquidationBlockedUntil[from];
+            delete liquidationWindowEnd[from];
+            revert("CircuitBreaker: liquidation window expired");
         }
         
-        // Cooldown has passed, allow the transfer
+        // Within valid liquidation window - allow the transfer and reset state
+        delete liquidationBlockedUntil[from];
+        delete liquidationWindowEnd[from];
         super._update(from, to, amount);
     }
 }
