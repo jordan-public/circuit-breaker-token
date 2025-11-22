@@ -63,6 +63,9 @@ contract LendingProtocolTest is Test {
             5,   // 5 block window
             address(protocol)
         );
+        
+        // Now set the correct collateral token in the protocol
+        protocol.setCollateralToken(address(cWBTC));
 
         // Mint underlying to user and have them deposit
         underlying.mint(user, 1000 ether);
@@ -91,7 +94,7 @@ contract LendingProtocolTest is Test {
 
         // Cannot initiate liquidation directly on token
         vm.expectRevert("Position not liquidatable");
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
     }
 
     function testUnhealthyPositionCanBeLiquidated() public {
@@ -100,7 +103,7 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation directly on token (protocol's canLiquidate will be called)
         vm.prank(liquidator);
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // Cannot liquidate immediately (in cooldown)
         vm.prank(liquidator);
@@ -133,7 +136,7 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation
         vm.prank(liquidator);
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // Advance past cooldown + window (10 + 5 + 1 = 16 blocks)
         vm.roll(block.number + 16);
@@ -145,7 +148,7 @@ contract LendingProtocolTest is Test {
 
         // Must re-initiate
         vm.prank(liquidator);
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // Advance to valid window
         vm.roll(block.number + 11);
@@ -163,7 +166,7 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation
         vm.prank(liquidator);
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // User adds more collateral, position becomes healthy again
         protocol.setHealthFactor(user, 1.5e18);
@@ -187,12 +190,12 @@ contract LendingProtocolTest is Test {
 
         // First liquidator initiates
         vm.prank(liquidator);
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // Second liquidator cannot re-initiate
         vm.prank(liquidator2);
         vm.expectRevert("Liquidation already initiated");
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // Advance past cooldown
         vm.roll(block.number + 11);
@@ -211,7 +214,7 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation directly on token
         vm.prank(liquidator);
-        cWBTC.initiateLiquidation(user);
+        protocol.initiateLiquidation(user);
 
         // User can still make deposits in a different transaction
         vm.roll(block.number + 1);

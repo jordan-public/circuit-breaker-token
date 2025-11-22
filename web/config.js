@@ -2,7 +2,7 @@
 const NETWORKS = {
     anvil: {
         chainId: 31337,
-        name: 'Anvil (Local)',
+        name: 'Anvil Local',
         rpcUrl: 'http://127.0.0.1:8545',
         // These will be populated from the deployment
         contracts: {
