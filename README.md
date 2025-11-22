@@ -514,6 +514,93 @@ token.transferFrom(user, protocol, amount); // ✓ Allowed (same block)
 - State cleanup on successful liquidation or window expiry
 - No loops or unbounded operations
 
+## Deployment & Testing
+
+### Using the Deployment Script
+
+The project includes a comprehensive deployment script (`script/CircuitBreakerToken.s.sol`) that:
+
+1. **Deploys** all necessary contracts (Mock WBTC, Circuit Breaker Token, Sample Lending Protocol)
+2. **Demonstrates** the progressive liquidation mechanism with live examples
+3. **Simulates** different scenarios (users with/without wallet balances)
+
+#### Local Testing (Anvil)
+
+```bash
+# Terminal 1: Start local blockchain
+./anvil.sh
+
+# Terminal 2: Run deployment script
+./deployAnvil.sh
+```
+
+The script will output detailed logs showing:
+- Contract deployments
+- User setup (Alice and Bob with different wallet balances)
+- Progressive liquidation percentages at each block
+- Time-decay of protection caps
+
+#### Testnet Deployment
+
+Deploy to Zircuit testnet:
+```bash
+./deployZircuit.sh
+```
+
+Deploy to Rootstock testnet:
+```bash
+./deployRootstock.sh
+```
+
+Deploy to Citrea testnet:
+```bash
+./deployCitreaTestnet.sh
+```
+
+**Note**: Make sure to set up your `.env` file with `SENDER` and `PRIVATE_KEY` variables (see `.env.example`).
+
+#### What the Script Demonstrates
+
+The deployment script showcases two key scenarios:
+
+**Alice (Insufficient Wallet Balance)**:
+- Has 50 WBTC in wallet, 50 cWBTC as collateral
+- Wallet/collateral ratio = 100%
+- Gets 50% protection cap initially
+- Cap decays linearly to 100% over the window
+- Shows how users with funds get grace period but must act
+
+**Bob (Low Wallet Balance)**:
+- Has 20 WBTC in wallet, 80 cWBTC as collateral  
+- Wallet/collateral ratio = 25%
+- No protection cap (below 50% threshold)
+- Normal progressive curve: 10% → 100%
+
+Both scenarios run through the complete lifecycle:
+1. Cooldown period (5 blocks, 0% liquidatable)
+2. Progressive window (5 blocks, increasing percentage)
+3. Final state (window expired or fully liquidatable)
+
+### Running Tests
+
+```bash
+# Run all tests
+forge test
+
+# Run with verbosity for detailed output
+forge test -vvv
+
+# Run specific test file
+forge test --match-path test/CircuitBreakerToken.t.sol
+```
+
+All 14 tests demonstrate:
+- Basic deposit/withdraw functionality
+- Progressive liquidation curves
+- Wallet balance protection with time-decay
+- Window expiration behavior
+- Multiple liquidator scenarios
+
 ### Deployment Parameters
 
 Recommended values (adjust based on network and use case):
