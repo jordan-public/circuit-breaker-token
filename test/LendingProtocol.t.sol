@@ -71,6 +71,10 @@ contract LendingProtocolTest is Test {
         cWETH.deposit(1000 ether);
         vm.stopPrank();
         
+        // Set collateral amount for user (representing their position in the protocol)
+        // In a real protocol, this would be tracked when they deposit
+        protocol.setCollateral(user, 1000 ether);
+        
         // User approves liquidators to manage their tokens
         vm.startPrank(user);
         cWETH.approve(liquidator, type(uint256).max);
@@ -103,15 +107,24 @@ contract LendingProtocolTest is Test {
         vm.expectRevert("CircuitBreaker: liquidation in cooldown");
         cWETH.transferFrom(user, liquidator, 200 ether);
 
-        // Advance past cooldown
-        vm.roll(block.number + 11);
-
-        // Now liquidation succeeds
+        // Advance past cooldown to start of window (10 blocks)
+        vm.roll(block.number + 10);
+        
+        // At block 0 of window, only 10% can be liquidated (100 ether)
+        (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct, 10);
+        assertEq(amt, 100 ether);
+        
+        // Trying to liquidate 200 ether should fail
         vm.prank(liquidator);
+        vm.expectRevert("CircuitBreaker: exceeds liquidatable amount");
         cWETH.transferFrom(user, liquidator, 200 ether);
+        
+        // Liquidate the allowed 100 ether
+        vm.prank(liquidator);
+        cWETH.transferFrom(user, liquidator, 100 ether);
 
-        assertEq(cWETH.balanceOf(liquidator), 200 ether);
-        assertEq(cWETH.balanceOf(user), 800 ether);
+        assertEq(cWETH.balanceOf(liquidator), 100 ether);
     }
 
     function testLiquidationWindowExpiry() public {

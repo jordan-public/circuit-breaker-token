@@ -43,13 +43,22 @@ contract MockERC20 {
 
 contract MockLiquidationTarget {
     mapping(address => bool) public liquidatable;
+    mapping(address => uint256) public collateral;
     
     function setLiquidatable(address user, bool status) external {
         liquidatable[user] = status;
     }
     
+    function setCollateral(address user, uint256 amount) external {
+        collateral[user] = amount;
+    }
+    
     function canLiquidate(address user) external view returns (bool) {
         return liquidatable[user];
+    }
+    
+    function getUserCollateral(address user) external view returns (uint256) {
+        return collateral[user];
     }
 }
 
@@ -102,6 +111,7 @@ contract CircuitBreakerTokenTest is Test {
     function testLiquidationBlockedThenAllowed() public {
         // Make position liquidatable
         liquidationTarget.setLiquidatable(user, true);
+        liquidationTarget.setCollateral(user, 1000 ether);
         
         vm.roll(block.number + 1);
         vm.prank(user);
@@ -130,17 +140,28 @@ contract CircuitBreakerTokenTest is Test {
         // Advance to reach cooldown (total 10 blocks)
         vm.roll(block.number + 5);
 
-        // Now liquidation is allowed
+        // Now at start of window, only 10% can be liquidated (100 ether of 1000)
+        (uint256 pct, uint256 maxAmount) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct, 10); // 10% at start of window
+        assertEq(maxAmount, 100 ether);
+        
+        // Try to liquidate more than allowed - should fail
         vm.prank(aave);
+        vm.expectRevert("CircuitBreaker: exceeds liquidatable amount");
         cWETH.transferFrom(user, aave, 200 ether);
+        
+        // Liquidate allowed amount
+        vm.prank(aave);
+        cWETH.transferFrom(user, aave, 100 ether);
 
-        assertEq(cWETH.balanceOf(user), 800 ether);
-        assertEq(cWETH.balanceOf(aave), 200 ether);
+        assertEq(cWETH.balanceOf(user), 900 ether);
+        assertEq(cWETH.balanceOf(aave), 100 ether);
     }
 
     function testLiquidationWindowExpires() public {
         // Make position liquidatable
         liquidationTarget.setLiquidatable(user, true);
+        liquidationTarget.setCollateral(user, 1000 ether);
         
         vm.roll(block.number + 1);
         vm.prank(user);
@@ -162,6 +183,75 @@ contract CircuitBreakerTokenTest is Test {
         
         assertEq(cWETH.balanceOf(user), 1000 ether);
         assertEq(cWETH.balanceOf(aave), 0);
+    }
+    
+    function testProgressiveLiquidation() public {
+        // Make position liquidatable
+        liquidationTarget.setLiquidatable(user, true);
+        liquidationTarget.setCollateral(user, 1000 ether);
+        
+        vm.roll(block.number + 1);
+        vm.prank(user);
+        cWETH.approve(aave, 1000 ether);
+        
+        vm.roll(block.number + 1);
+        
+        // Initiate liquidation
+        vm.prank(aave);
+        cWETH.initiateLiquidation(user);
+        
+        // Advance to start of window (10 blocks)
+        vm.roll(block.number + 10);
+        
+        // At block 0 of window: 10% liquidatable
+        (uint256 pct1, uint256 amt1) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct1, 10);
+        assertEq(amt1, 100 ether);
+        
+        // Advance halfway through window (2.5 blocks)
+        vm.roll(block.number + 2);
+        
+        // At block 2 of 5: 10% + (90% * 2/5) = 10% + 36% = 46%
+        (uint256 pct2, uint256 amt2) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct2, 46);
+        assertEq(amt2, 460 ether);
+        
+        // Advance to end of window (5 blocks total)
+        vm.roll(block.number + 3);
+        
+        // At block 5 of 5: 100% liquidatable
+        (uint256 pct3, uint256 amt3) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct3, 100);
+        assertEq(amt3, 1000 ether);
+    }
+    
+    function testWalletBalanceReducesLiquidation() public {
+        // User has significant wallet balance
+        underlying.mint(user, 600 ether); // 60% of collateral
+        
+        liquidationTarget.setLiquidatable(user, true);
+        liquidationTarget.setCollateral(user, 1000 ether);
+        
+        vm.roll(block.number + 1);
+        vm.prank(user);
+        cWETH.approve(aave, 1000 ether);
+        
+        vm.roll(block.number + 1);
+        
+        // Initiate liquidation
+        vm.prank(aave);
+        cWETH.initiateLiquidation(user);
+        
+        // Advance to start of window
+        vm.roll(block.number + 10);
+        
+        // Wallet balance 600e, collateral 1000e -> ratio = 60%
+        // Base percentage at start = 10%
+        // Reduction = 60% * 10% / 300 = 2%
+        // Final = 10% - 2% = 8%
+        (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct, 8);
+        assertEq(amt, 80 ether);
     }
 
     function testCannotInitiateLiquidationForHealthyPosition() public {

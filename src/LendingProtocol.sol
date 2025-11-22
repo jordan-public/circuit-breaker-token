@@ -12,6 +12,9 @@ contract LendingProtocol is ILiquidationTarget {
     // User health factors (simplified for example)
     mapping(address => uint256) public healthFactor;
     
+    // User collateral amounts
+    mapping(address => uint256) public userCollateral;
+    
     CircuitBreakerToken public immutable collateralToken;
     
     constructor(address _collateralToken) {
@@ -24,11 +27,31 @@ contract LendingProtocol is ILiquidationTarget {
         healthFactor[user] = _healthFactor;
     }
     
+    /// @notice Set collateral for a user (for testing)
+    /// @dev In a real protocol, this would be tracked when depositing
+    function setCollateral(address user, uint256 amount) external {
+        userCollateral[user] = amount;
+    }
+    
     /// @notice Check if a user's position can be liquidated
     /// @param user The user address to check
     /// @return true if health factor is below threshold (position is unhealthy)
     function canLiquidate(address user) external view returns (bool) {
         return healthFactor[user] < LIQUIDATION_THRESHOLD;
+    }
+    
+    /// @notice Get the user's collateral balance
+    /// @param user The user address to check
+    /// @return The amount of collateral the user has deposited
+    function getUserCollateral(address user) external view returns (uint256) {
+        return userCollateral[user];
+    }
+    
+    /// @notice Deposit collateral (for testing)
+    /// @param amount The amount of collateral to deposit
+    function depositCollateral(uint256 amount) external {
+        collateralToken.transferFrom(msg.sender, address(this), amount);
+        userCollateral[msg.sender] += amount;
     }
     
     /// @notice Initiate liquidation process for an unhealthy position

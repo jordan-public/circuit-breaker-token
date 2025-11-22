@@ -2,9 +2,16 @@
 
 ## Abstract
 
-Circuit Breaker Token is a wrapped token implementation that introduces a time-delayed liquidation mechanism to protect users from instant liquidations in DeFi lending protocols. By enforcing a mandatory cooldown period between liquidation initiation and execution, users gain time to react and potentially save their positions, while still ensuring that legitimately unhealthy positions can eventually be liquidated.
+Circuit Breaker Token is a wrapped token implementation that introduces a **progressive time-delayed liquidation mechanism** to protect users from instant liquidations in DeFi lending protocols. By enforcing a mandatory cooldown period followed by a gradual liquidation window, users gain time to react and potentially save their positions, while still ensuring that legitimately unhealthy positions can eventually be liquidated.
 
 The implementation is **generic and can wrap any ERC20 token** - examples include cWETH (wrapped WETH), cUSDC (wrapped USDC), cDAI (wrapped DAI), etc. The "c" prefix stands for "circuit breaker."
+
+### Key Features
+
+1. **Progressive Liquidation Curve**: Liquidatable amount increases from 10% to 100% over the execution window
+2. **Wallet Balance Consideration**: Users with available tokens can get additional time (reduced liquidation percentage)
+3. **Collateral-Aware**: Takes into account the user's total collateral position
+4. **Two-Phase System**: Initiation (with cooldown) → Progressive execution window
 
 ## Introduction
 
@@ -215,6 +222,54 @@ gantt
 
 ## Implementation Notes
 
+### Progressive Liquidation Mechanism
+
+The circuit breaker implements a **progressive liquidation curve** that gradually increases the liquidatable amount over time:
+
+#### Liquidation Percentage Calculation
+
+```
+Base Percentage = MIN (10%) + (MAX (100%) - MIN (10%)) × (blocks_elapsed / window_size)
+                = 10% + 90% × (blocks_elapsed / 5)
+```
+
+**Example Timeline (5-block window):**
+- Block 0 of window: 10% liquidatable
+- Block 1 of window: 28% liquidatable  
+- Block 2 of window: 46% liquidatable
+- Block 3 of window: 64% liquidatable
+- Block 4 of window: 82% liquidatable
+- Block 5 of window: 100% liquidatable
+
+#### Wallet Balance Adjustment
+
+The system checks the user's **wallet balance** of the underlying token to give users with available funds additional time:
+
+```solidity
+if (walletBalance > 0 && userCollateral > 0) {
+    walletToCollateralRatio = (walletBalance × 100) / userCollateral
+    
+    if (walletToCollateralRatio > 50%) {
+        reduction = (walletToCollateralRatio × percentage) / 300  // Max 33% reduction
+        adjustedPercentage = percentage - reduction
+    }
+}
+```
+
+**Example:** User with 600 underlying tokens in wallet and 1000 collateral:
+- Wallet/Collateral ratio = 60%
+- At block 0 (10% base): Reduction = 60% × 10% / 300 = 2% → Final = 8%
+- At block 2 (46% base): Reduction = 60% × 46% / 300 = 9.2% → Final = 36.8%
+
+This rewards users who have the **ability to add collateral** by giving them more time.
+
+#### Benefits of Progressive Liquidation
+
+1. **User Protection**: Users have time to add collateral incrementally
+2. **Market Stability**: Prevents large instant liquidations from crashing prices
+3. **Incentive Alignment**: Liquidators are rewarded for acting quickly (higher percentage)
+4. **Fairness**: Users with available funds get more protection
+
 ### Core Components
 
 #### 1. Circuit Breaker Token Contract
@@ -231,31 +286,41 @@ A generic ERC20 wrapper that adds circuit breaker functionality to any underlyin
   - `approvalBlock`: Tracks the block number of each approval (for user deposit detection)
   - `liquidationBlockedUntil`: Block number when liquidation becomes possible
   - `liquidationWindowEnd`: Block number when liquidation window expires
+  - `maxLiquidatableAmount`: Maximum amount that can be liquidated (set at initiation)
   - `cooldownBlocks`: Immutable cooldown duration (e.g., 10 blocks)
   - `liquidationWindow`: Immutable window duration (e.g., 5 blocks)
-  - `liquidationTarget`: Protocol contract that implements `canLiquidate()`
+  - `liquidationTarget`: Protocol contract that implements `canLiquidate()` and `getUserCollateral()`
 
 - **Key Functions**:
   ```solidity
   function initiateLiquidation(address user) external
+  function getLiquidatableAmount(address user) public view returns (uint256 percentage, uint256 amount)
   function _update(address from, address to, uint256 amount) internal override
   ```
 
 #### 2. ILiquidationTarget Interface
 
-Protocols must implement this interface to determine liquidation eligibility:
+Protocols must implement this interface to determine liquidation eligibility and provide collateral information:
 
 ```solidity
 interface ILiquidationTarget {
     function canLiquidate(address user) external view returns (bool);
+    function getUserCollateral(address user) external view returns (uint256);
 }
 ```
 
 Example implementation:
 ```solidity
 contract LendingProtocol is ILiquidationTarget {
+    mapping(address => uint256) public healthFactor;
+    mapping(address => uint256) public userCollateral;
+    
     function canLiquidate(address user) external view returns (bool) {
         return healthFactor[user] < LIQUIDATION_THRESHOLD; // e.g., < 100%
+    }
+    
+    function getUserCollateral(address user) external view returns (uint256) {
+        return userCollateral[user]; // Used for progressive liquidation calculation
     }
 }
 ```

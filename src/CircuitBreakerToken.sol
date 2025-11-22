@@ -10,6 +10,11 @@ interface ILiquidationTarget {
     /// @param user The user address to check
     /// @return true if the position can be liquidated, false otherwise
     function canLiquidate(address user) external view returns (bool);
+    
+    /// @notice Get the user's collateral balance in the protocol
+    /// @param user The user address to check
+    /// @return The amount of collateral the user has deposited
+    function getUserCollateral(address user) external view returns (uint256);
 }
 
 /// @title Circuit Breaker Token
@@ -20,13 +25,18 @@ contract CircuitBreakerToken is ERC20 {
     mapping(address => mapping(address => uint256)) public approvalBlock;         // slot 5
     mapping(address => uint256) public liquidationBlockedUntil;                  // slot 6
     mapping(address => uint256) public liquidationWindowEnd;                     // slot 7
+    mapping(address => uint256) public maxLiquidatableAmount;                    // slot 8
 
     IERC20 public immutable underlying;
     uint256 public immutable cooldownBlocks;
     uint256 public immutable liquidationWindow;
     ILiquidationTarget public immutable liquidationTarget;
+    
+    // Liquidation curve parameters
+    uint256 public constant MIN_LIQUIDATION_PCT = 10; // 10% minimum
+    uint256 public constant MAX_LIQUIDATION_PCT = 100; // 100% maximum
 
-    event LiquidationInitiated(address indexed user, uint256 canLiquidateAt, uint256 windowEndsAt);
+    event LiquidationInitiated(address indexed user, uint256 canLiquidateAt, uint256 windowEndsAt, uint256 maxAmount);
     event Deposit(address indexed user, uint256 amount);
     event Withdraw(address indexed user, uint256 amount);
 
@@ -79,15 +89,76 @@ contract CircuitBreakerToken is ERC20 {
             // Window expired, clean up old state
             delete liquidationBlockedUntil[user];
             delete liquidationWindowEnd[user];
+            delete maxLiquidatableAmount[user];
         }
         
         uint256 canLiquidateAt = block.number + cooldownBlocks;
         uint256 windowEnds = canLiquidateAt + liquidationWindow;
+        uint256 userBalance = balanceOf(user);
         
         liquidationBlockedUntil[user] = canLiquidateAt;
         liquidationWindowEnd[user] = windowEnds;
+        maxLiquidatableAmount[user] = userBalance;
         
-        emit LiquidationInitiated(user, canLiquidateAt, windowEnds);
+        emit LiquidationInitiated(user, canLiquidateAt, windowEnds, userBalance);
+    }
+    
+    /// @notice Calculate how much can be liquidated based on time elapsed and collateral
+    /// @param user The user whose liquidation percentage to calculate
+    /// @return percentage The percentage (0-100) that can be liquidated
+    /// @return amount The actual amount that can be liquidated
+    function getLiquidatableAmount(address user) public view returns (uint256 percentage, uint256 amount) {
+        uint256 canLiquidateAt = liquidationBlockedUntil[user];
+        uint256 windowEnds = liquidationWindowEnd[user];
+        
+        // No liquidation initiated
+        if (canLiquidateAt == 0) {
+            return (0, 0);
+        }
+        
+        // Still in cooldown
+        if (block.number < canLiquidateAt) {
+            return (0, 0);
+        }
+        
+        // Window expired
+        if (block.number > windowEnds) {
+            return (0, 0);
+        }
+        
+        // Calculate progressive percentage based on blocks elapsed
+        uint256 blocksIntoWindow = block.number - canLiquidateAt;
+        uint256 totalWindowBlocks = liquidationWindow;
+        
+        // Linear progression from MIN_LIQUIDATION_PCT to MAX_LIQUIDATION_PCT
+        percentage = MIN_LIQUIDATION_PCT + 
+            ((MAX_LIQUIDATION_PCT - MIN_LIQUIDATION_PCT) * blocksIntoWindow) / totalWindowBlocks;
+        
+        // Consider user's wallet balance for potential collateral additions
+        uint256 walletBalance = underlying.balanceOf(user);
+        uint256 userCollateral = liquidationTarget.getUserCollateral(user);
+        
+        // If user has significant wallet balance relative to collateral, give more time
+        // (reduce liquidatable percentage)
+        if (walletBalance > 0 && userCollateral > 0) {
+            uint256 walletToCollateralRatio = (walletBalance * 100) / userCollateral;
+            
+            // If wallet has >50% of collateral amount, reduce liquidatable percentage
+            if (walletToCollateralRatio > 50) {
+                uint256 reduction = (walletToCollateralRatio * percentage) / 300; // Max 33% reduction
+                if (reduction < percentage) {
+                    percentage -= reduction;
+                }
+            }
+        }
+        
+        // Cap at max percentage
+        if (percentage > MAX_LIQUIDATION_PCT) {
+            percentage = MAX_LIQUIDATION_PCT;
+        }
+        
+        // Calculate actual amount based on percentage of max liquidatable amount
+        amount = (maxLiquidatableAmount[user] * percentage) / 100;
     }
 
     function approve(address spender, uint256 amount)
@@ -138,12 +209,18 @@ contract CircuitBreakerToken is ERC20 {
             // Window expired - reset and block the transfer
             delete liquidationBlockedUntil[from];
             delete liquidationWindowEnd[from];
+            delete maxLiquidatableAmount[from];
             revert("CircuitBreaker: liquidation window expired");
         }
+        
+        // Check if amount exceeds progressive liquidation limit
+        (, uint256 maxAmount) = getLiquidatableAmount(from);
+        require(amount <= maxAmount, "CircuitBreaker: exceeds liquidatable amount");
         
         // Within valid liquidation window - allow the transfer and reset state
         delete liquidationBlockedUntil[from];
         delete liquidationWindowEnd[from];
+        delete maxLiquidatableAmount[from];
         super._update(from, to, amount);
     }
 }
