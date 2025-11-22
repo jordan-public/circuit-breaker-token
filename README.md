@@ -4,7 +4,7 @@
 
 Circuit Breaker Token is a wrapped token implementation that introduces a **progressive time-delayed liquidation mechanism** to protect users from instant liquidations in DeFi lending protocols. By enforcing a mandatory cooldown period followed by a gradual liquidation window, users gain time to react and potentially save their positions, while still ensuring that legitimately unhealthy positions can eventually be liquidated.
 
-The implementation is **generic and can wrap any ERC20 token** - examples include cWETH (wrapped WETH), cUSDC (wrapped USDC), cDAI (wrapped DAI), etc. The "c" prefix stands for "circuit breaker."
+The implementation is **generic and can wrap any ERC20 token** - examples include cWBTC (wrapped WBTC), cUSDC (wrapped USDC), cDAI (wrapped DAI), etc. The "c" prefix stands for "circuit breaker."
 
 ### Key Features
 
@@ -82,11 +82,11 @@ The system works in two phases:
 - Potential security vulnerabilities from core changes
 
 **Instead, we use a wrapper token approach:**
-- Circuit breaker tokens (cWETH, cUSDC, cDAI, etc.) wrap existing tokens with protection functionality
+- Circuit breaker tokens (cWBTC, cUSDC, cDAI, etc.) wrap existing tokens with protection functionality
 - Lending protocols treat them as any other ERC20 collateral token
 - No changes needed to protocol code
 - Can be deployed and adopted immediately
-- Users opt-in by choosing to use wrapped versions (cWETH instead of WETH, cUSDC instead of USDC, etc.)
+- Users opt-in by choosing to use wrapped versions (cWBTC instead of WBTC, cUSDC instead of USDC, etc.)
 
 ### Protocol Compatibility
 
@@ -103,10 +103,10 @@ Different lending protocols have different requirements for adding new collatera
 | **Radiant** | DAO-Governed | Requires governance vote | Weeks | Aave V2 fork with similar governance |
 
 **Immediate Deployment Options:**
-Protocols like Morpho, Euler V2, and Silo Finance allow permissionless market creation, meaning circuit breaker tokens (cWETH, cUSDC, etc.) can be deployed and used immediately without any governance approval.
+Protocols like Morpho, Euler V2, and Silo Finance allow permissionless market creation, meaning circuit breaker tokens (cWBTC, cUSDC, etc.) can be deployed and used immediately without any governance approval.
 
 **DAO Approval Options:**
-For major protocols like Aave and Compound, a governance proposal highlighting the liquidation storm protection would be needed. Multiple tokens can be proposed together (e.g., cWETH, cUSDC, cDAI) or individually.
+For major protocols like Aave and Compound, a governance proposal highlighting the liquidation storm protection would be needed. Multiple tokens can be proposed together (e.g., cWBTC, cUSDC, cDAI) or individually.
 
 ### Phase 1: Initiation & Cooldown
 
@@ -274,7 +274,7 @@ sequenceDiagram
     participant User
     participant Protocol
     participant Liquidator
-    participant CircuitBreakerToken as cToken (cWETH/cUSDC/etc)
+    participant CircuitBreakerToken as cToken (cWBTC/cUSDC/etc)
 
     Note over User,cToken: User's position becomes unhealthy
     
@@ -434,7 +434,7 @@ This rewards users who have the **ability to add collateral** by giving them mor
 A generic ERC20 wrapper that adds circuit breaker functionality to any underlying token:
 
 **Example Implementations:**
-- `cWETH` - Circuit breaker wrapped WETH
+- `cWBTC` - Circuit breaker wrapped WBTC
 - `cUSDC` - Circuit breaker wrapped USDC  
 - `cDAI` - Circuit breaker wrapped DAI
 - Any ERC20 can be wrapped
@@ -526,10 +526,10 @@ Recommended values (adjust based on network and use case):
 LendingProtocol protocol = new LendingProtocol();
 
 // 2. Deploy circuit breaker tokens with your protocol as the liquidation target
-CircuitBreakerToken cWETH = new CircuitBreakerToken(
-    "Circuit Breaker WETH",
-    "cWETH",
-    address(WETH),         // underlying token
+CircuitBreakerToken cWBTC = new CircuitBreakerToken(
+    "Circuit Breaker WBTC",
+    "cWBTC",
+    address(WBTC),         // underlying token
     10,                    // cooldownBlocks
     5,                     // liquidationWindow  
     address(protocol)      // liquidationTarget
@@ -545,12 +545,12 @@ CircuitBreakerToken cUSDC = new CircuitBreakerToken(
 );
 
 // 3. Users wrap their tokens
-WETH.approve(address(cWETH), amount);
-cWETH.deposit(amount);  // Wrap WETH → cWETH
+WBTC.approve(address(cWBTC), amount);
+cWBTC.deposit(amount);  // Wrap WBTC → cWBTC
 
 // 4. Users deposit wrapped collateral
-cWETH.approve(address(protocol), amount);
-protocol.deposit(cWETH, amount);
+cWBTC.approve(address(protocol), amount);
+protocol.deposit(cWBTC, amount);
 
 // 5. When position becomes unhealthy
 liquidator.initiateLiquidation(user);      // Start cooldown
@@ -561,7 +561,7 @@ liquidator.liquidate(user, amount);        // Execute liquidation
 ### Deployment Strategy
 
 **For Permissionless Protocols (Immediate):**
-1. Deploy circuit breaker token contracts (cWETH, cUSDC, cDAI, etc.)
+1. Deploy circuit breaker token contracts (cWBTC, cUSDC, cDAI, etc.)
 2. Create lending markets (e.g., on Morpho or Euler V2)
 3. Users can start using wrapped tokens as collateral immediately
 4. Market tests the concept with real usage
@@ -574,22 +574,22 @@ liquidator.liquidate(user, amount);        // Execute liquidation
    - Circuit breaker solution explanation
    - Interest rate premium justification (+0.5-1% APR)
    - Risk assessment and audit results
-   - Proposal can include multiple tokens (cWETH + cUSDC + cDAI) or single token
+   - Proposal can include multiple tokens (cWBTC + cUSDC + cDAI) or single token
 4. Community discussion and vote
 5. If approved, circuit breaker tokens become accepted collateral
 
 **Adoption Path:**
 ```
 Phase 1: Launch on permissionless protocols (Morpho, Euler, Silo)
-         → Deploy cWETH, cUSDC, cDAI
+         → Deploy cWBTC, cUSDC, cDAI
          → Prove concept, gather data, build community
 
 Phase 2: Governance proposals to major protocols (Aave, Compound)
          → Use Phase 1 data to demonstrate value
-         → Propose most popular tokens first (cWETH likely)
+         → Propose most popular tokens first (cWBTC likely)
 
 Phase 3: Widespread adoption as users prefer cascade-resistant collateral
-         → Expand to more wrapped tokens (cBTC, cLINK, etc.)
+         → Expand to more wrapped tokens (cLINK, cSTETH, etc.)
 ```
 
 ### Testing
@@ -612,10 +612,10 @@ Test coverage includes:
 1. **Not a complete solution**: Users still need to monitor their positions and respond during the cooldown
 2. **Gas costs**: Adds overhead compared to instant liquidations
 3. **Liquidation delay**: Protocols may require higher collateralization ratios to account for the delay
-4. **Wrapping required**: Users must wrap tokens (WETH → cWETH) adding a transaction step
+4. **Wrapping required**: Users must wrap tokens (WBTC → cWBTC) adding a transaction step
 5. **Adoption required**: Only effective if users choose wrapped versions - requires market education
 6. **Governance friction**: Major protocols require governance approval, which takes time
-7. **Fragmented liquidity**: Each wrapped token (cWETH, cUSDC, etc.) has separate liquidity from underlying
+7. **Fragmented liquidity**: Each wrapped token (cWBTC, cUSDC, etc.) has separate liquidity from underlying
 
 ### Future Improvements
 

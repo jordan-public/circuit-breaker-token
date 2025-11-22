@@ -63,18 +63,18 @@ contract MockLiquidationTarget {
 }
 
 contract CircuitBreakerTokenTest is Test {
-    CircuitBreakerToken cWETH;  // Example: wrapping WETH
+    CircuitBreakerToken cWBTC;  // Example: wrapping WBTC
     MockERC20 underlying;
     MockLiquidationTarget liquidationTarget;
     address user = address(0x1);
     address aave = address(0x2);
 
     function setUp() public {
-        underlying = new MockERC20("Wrapped Ether", "WETH");
+        underlying = new MockERC20("Wrapped Bitcoin", "WBTC");
         liquidationTarget = new MockLiquidationTarget();
-        cWETH = new CircuitBreakerToken(
-            "Circuit Breaker WETH",
-            "cWETH",
+        cWBTC = new CircuitBreakerToken(
+            "Circuit Breaker WBTC",
+            "cWBTC",
             address(underlying),
             10,  // 10 block cooldown
             5,   // 5 block window
@@ -84,8 +84,8 @@ contract CircuitBreakerTokenTest is Test {
         // Mint underlying tokens to user and have them deposit
         underlying.mint(user, 1000 ether);
         vm.startPrank(user);
-        underlying.approve(address(cWETH), 1000 ether);
-        cWETH.deposit(1000 ether);
+        underlying.approve(address(cWBTC), 1000 ether);
+        cWBTC.deposit(1000 ether);
         vm.stopPrank();
     }
 
@@ -97,15 +97,15 @@ contract CircuitBreakerTokenTest is Test {
         vm.roll(block.number + 1);  // Move to a new block first
         
         vm.startPrank(user);
-        cWETH.approve(aave, 500 ether);
+        cWBTC.approve(aave, 500 ether);
         vm.stopPrank();
         
         // Same block transfer should work because liquidationBlockedUntil == 0
         vm.prank(aave);
-        cWETH.transferFrom(user, aave, 50 ether);
+        cWBTC.transferFrom(user, aave, 50 ether);
         
-        assertEq(cWETH.balanceOf(user), 950 ether);
-        assertEq(cWETH.balanceOf(aave), 50 ether);
+        assertEq(cWBTC.balanceOf(user), 950 ether);
+        assertEq(cWBTC.balanceOf(aave), 50 ether);
     }
 
     function testLiquidationBlockedThenAllowed() public {
@@ -115,19 +115,19 @@ contract CircuitBreakerTokenTest is Test {
         
         vm.roll(block.number + 1);
         vm.prank(user);
-        cWETH.approve(aave, 1000 ether);
+        cWBTC.approve(aave, 1000 ether);
         
         // Roll forward to avoid same-block approval bypass
         vm.roll(block.number + 1);
         
         // Initiate liquidation
         vm.prank(aave);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Immediately after initiation, still in cooldown
         vm.prank(aave);
         vm.expectRevert("CircuitBreaker: liquidation in cooldown");
-        cWETH.transferFrom(user, aave, 200 ether);
+        cWBTC.transferFrom(user, aave, 200 ether);
 
         // Advance fewer than 10 blocks (still in cooldown)
         vm.roll(block.number + 5);
@@ -135,27 +135,27 @@ contract CircuitBreakerTokenTest is Test {
         // Still blocked
         vm.prank(aave);
         vm.expectRevert("CircuitBreaker: liquidation in cooldown");
-        cWETH.transferFrom(user, aave, 200 ether);
+        cWBTC.transferFrom(user, aave, 200 ether);
 
         // Advance to reach cooldown (total 10 blocks)
         vm.roll(block.number + 5);
 
         // Now at start of window, only 10% can be liquidated (100 ether of 1000)
-        (uint256 pct, uint256 maxAmount) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct, uint256 maxAmount) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct, 10); // 10% at start of window
         assertEq(maxAmount, 100 ether);
         
         // Try to liquidate more than allowed - should fail
         vm.prank(aave);
         vm.expectRevert("CircuitBreaker: exceeds liquidatable amount");
-        cWETH.transferFrom(user, aave, 200 ether);
+        cWBTC.transferFrom(user, aave, 200 ether);
         
         // Liquidate allowed amount
         vm.prank(aave);
-        cWETH.transferFrom(user, aave, 100 ether);
+        cWBTC.transferFrom(user, aave, 100 ether);
 
-        assertEq(cWETH.balanceOf(user), 900 ether);
-        assertEq(cWETH.balanceOf(aave), 100 ether);
+        assertEq(cWBTC.balanceOf(user), 900 ether);
+        assertEq(cWBTC.balanceOf(aave), 100 ether);
     }
 
     function testLiquidationWindowExpires() public {
@@ -165,13 +165,13 @@ contract CircuitBreakerTokenTest is Test {
         
         vm.roll(block.number + 1);
         vm.prank(user);
-        cWETH.approve(aave, 1000 ether);
+        cWBTC.approve(aave, 1000 ether);
         
         vm.roll(block.number + 1);
         
         // Initiate liquidation
         vm.prank(aave);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
         
         // Advance past both cooldown (10) and window (5) = 15 blocks total
         vm.roll(block.number + 16);
@@ -179,10 +179,10 @@ contract CircuitBreakerTokenTest is Test {
         // Liquidation window has expired
         vm.prank(aave);
         vm.expectRevert("CircuitBreaker: liquidation window expired");
-        cWETH.transferFrom(user, aave, 200 ether);
+        cWBTC.transferFrom(user, aave, 200 ether);
         
-        assertEq(cWETH.balanceOf(user), 1000 ether);
-        assertEq(cWETH.balanceOf(aave), 0);
+        assertEq(cWBTC.balanceOf(user), 1000 ether);
+        assertEq(cWBTC.balanceOf(aave), 0);
     }
     
     function testProgressiveLiquidation() public {
@@ -192,19 +192,19 @@ contract CircuitBreakerTokenTest is Test {
         
         vm.roll(block.number + 1);
         vm.prank(user);
-        cWETH.approve(aave, 1000 ether);
+        cWBTC.approve(aave, 1000 ether);
         
         vm.roll(block.number + 1);
         
         // Initiate liquidation
         vm.prank(aave);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
         
         // Advance to start of window (10 blocks)
         vm.roll(block.number + 10);
         
         // At block 0 of window: 10% liquidatable
-        (uint256 pct1, uint256 amt1) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct1, uint256 amt1) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct1, 10);
         assertEq(amt1, 100 ether);
         
@@ -212,7 +212,7 @@ contract CircuitBreakerTokenTest is Test {
         vm.roll(block.number + 2);
         
         // At block 2 of 5: 10% + (90% * 2/5) = 10% + 36% = 46%
-        (uint256 pct2, uint256 amt2) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct2, uint256 amt2) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct2, 46);
         assertEq(amt2, 460 ether);
         
@@ -220,7 +220,7 @@ contract CircuitBreakerTokenTest is Test {
         vm.roll(block.number + 3);
         
         // At block 5 of 5: 100% liquidatable
-        (uint256 pct3, uint256 amt3) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct3, uint256 amt3) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct3, 100);
         assertEq(amt3, 1000 ether);
     }
@@ -234,13 +234,13 @@ contract CircuitBreakerTokenTest is Test {
         
         vm.roll(block.number + 1);
         vm.prank(user);
-        cWETH.approve(aave, 1000 ether);
+        cWBTC.approve(aave, 1000 ether);
         
         vm.roll(block.number + 1);
         
         // Initiate liquidation
         vm.prank(aave);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
         
         // Advance to start of window
         vm.roll(block.number + 10);
@@ -248,7 +248,7 @@ contract CircuitBreakerTokenTest is Test {
         // Wallet balance 600, collateral 1000 -> ratio = 60%
         // Since ratio >= 50%, base cap = 70%, decay from 70% to 100%
         // At block 0: cap = 70%, base = 10% -> final = 10%
-        (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct, uint256 amt) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct, 10);
         assertEq(amt, 100 ether);
         
@@ -259,7 +259,7 @@ contract CircuitBreakerTokenTest is Test {
         // Base percentage = 10% + 90% * 2/5 = 46%
         // Cap = 70% + 30% * 2/5 = 82%
         // Final = min(46%, 82%) = 46%
-        (uint256 pct2, uint256 amt2) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct2, uint256 amt2) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct2, 46);
         assertEq(amt2, 460 ether);
         
@@ -269,7 +269,7 @@ contract CircuitBreakerTokenTest is Test {
         // At block 5 of 5:
         // Base = 100%, Cap decayed to 100%
         // User had time to act but didn't - now fully liquidatable
-        (uint256 pct3, uint256 amt3) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct3, uint256 amt3) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct3, 100);
         assertEq(amt3, 1000 ether);
     }
@@ -283,13 +283,13 @@ contract CircuitBreakerTokenTest is Test {
         
         vm.roll(block.number + 1);
         vm.prank(user);
-        cWETH.approve(aave, 1000 ether);
+        cWBTC.approve(aave, 1000 ether);
         
         vm.roll(block.number + 1);
         
         // Initiate liquidation
         vm.prank(aave);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
         
         // Advance to start of window
         vm.roll(block.number + 10);
@@ -297,7 +297,7 @@ contract CircuitBreakerTokenTest is Test {
         // Wallet balance 1200, collateral 1000 -> ratio = 120%
         // Since ratio >= 100%, base cap = 50%, decays from 50% to 100%
         // At block 0: cap = 50%, base = 10% -> final = 10%
-        (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct, uint256 amt) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct, 10);
         assertEq(amt, 100 ether);
         
@@ -308,7 +308,7 @@ contract CircuitBreakerTokenTest is Test {
         // Base = 10% + 90% * 2/5 = 46%
         // Cap = 50% + 50% * 2/5 = 70%
         // Final = min(46%, 70%) = 46%
-        (uint256 pct2, uint256 amt2) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct2, uint256 amt2) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct2, 46);
         assertEq(amt2, 460 ether);
         
@@ -317,23 +317,23 @@ contract CircuitBreakerTokenTest is Test {
         
         // At block 5: both base and cap reach 100%
         // User refused to act despite having funds - fully liquidatable
-        (uint256 pct3, uint256 amt3) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct3, uint256 amt3) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct3, 100);
         assertEq(amt3, 1000 ether);
     }
 
     function testCannotInitiateLiquidationForHealthyPosition() public {
         vm.prank(user);
-        cWETH.approve(aave, 1000 ether);
+        cWBTC.approve(aave, 1000 ether);
 
         // Position is healthy (not liquidatable)
         vm.prank(aave);
         vm.expectRevert("Position not liquidatable");
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Verify no state was changed
-        assertEq(cWETH.liquidationBlockedUntil(user), 0);
-        assertEq(cWETH.liquidationWindowEnd(user), 0);
+        assertEq(cWBTC.liquidationBlockedUntil(user), 0);
+        assertEq(cWBTC.liquidationWindowEnd(user), 0);
     }
 
     function testDepositAndWithdraw() public {
@@ -341,18 +341,18 @@ contract CircuitBreakerTokenTest is Test {
         underlying.mint(user2, 500 ether);
         
         vm.startPrank(user2);
-        underlying.approve(address(cWETH), 500 ether);
-        cWETH.deposit(500 ether);
+        underlying.approve(address(cWBTC), 500 ether);
+        cWBTC.deposit(500 ether);
         vm.stopPrank();
         
-        assertEq(cWETH.balanceOf(user2), 500 ether);
+        assertEq(cWBTC.balanceOf(user2), 500 ether);
         assertEq(underlying.balanceOf(user2), 0);
         
         // Withdraw
         vm.prank(user2);
-        cWETH.withdraw(500 ether);
+        cWBTC.withdraw(500 ether);
         
-        assertEq(cWETH.balanceOf(user2), 0);
+        assertEq(cWBTC.balanceOf(user2), 0);
         assertEq(underlying.balanceOf(user2), 500 ether);
     }
 }

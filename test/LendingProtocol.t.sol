@@ -43,7 +43,7 @@ contract MockERC20 {
 }
 
 contract LendingProtocolTest is Test {
-    CircuitBreakerToken cWETH;  // Example: wrapping WETH
+    CircuitBreakerToken cWBTC;  // Example: wrapping WETH
     MockERC20 underlying;
     LendingProtocol protocol;
     address user = address(0x1);
@@ -54,10 +54,10 @@ contract LendingProtocolTest is Test {
         protocol = new LendingProtocol(address(0x1));
         
         // Deploy underlying token and circuit breaker token
-        underlying = new MockERC20("Wrapped Ether", "WETH");
-        cWETH = new CircuitBreakerToken(
-            "Circuit Breaker WETH",
-            "cWETH",
+        underlying = new MockERC20("Wrapped Bitcoin", "WBTC");
+        cWBTC = new CircuitBreakerToken(
+            "Circuit Breaker WBTC",
+            "cWBTC",
             address(underlying),
             10,  // 10 block cooldown
             5,   // 5 block window
@@ -67,8 +67,8 @@ contract LendingProtocolTest is Test {
         // Mint underlying to user and have them deposit
         underlying.mint(user, 1000 ether);
         vm.startPrank(user);
-        underlying.approve(address(cWETH), 1000 ether);
-        cWETH.deposit(1000 ether);
+        underlying.approve(address(cWBTC), 1000 ether);
+        cWBTC.deposit(1000 ether);
         vm.stopPrank();
         
         // Set collateral amount for user (representing their position in the protocol)
@@ -77,8 +77,8 @@ contract LendingProtocolTest is Test {
         
         // User approves liquidators to manage their tokens
         vm.startPrank(user);
-        cWETH.approve(liquidator, type(uint256).max);
-        cWETH.approve(address(0x3), type(uint256).max); // liquidator2
+        cWBTC.approve(liquidator, type(uint256).max);
+        cWBTC.approve(address(0x3), type(uint256).max); // liquidator2
         vm.stopPrank();
         
         // Advance a block so approvals aren't in the same block as liquidations
@@ -91,7 +91,7 @@ contract LendingProtocolTest is Test {
 
         // Cannot initiate liquidation directly on token
         vm.expectRevert("Position not liquidatable");
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
     }
 
     function testUnhealthyPositionCanBeLiquidated() public {
@@ -100,31 +100,31 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation directly on token (protocol's canLiquidate will be called)
         vm.prank(liquidator);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Cannot liquidate immediately (in cooldown)
         vm.prank(liquidator);
         vm.expectRevert("CircuitBreaker: liquidation in cooldown");
-        cWETH.transferFrom(user, liquidator, 200 ether);
+        cWBTC.transferFrom(user, liquidator, 200 ether);
 
         // Advance past cooldown to start of window (10 blocks)
         vm.roll(block.number + 10);
         
         // At block 0 of window, only 10% can be liquidated (100 ether)
-        (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
+        (uint256 pct, uint256 amt) = cWBTC.getLiquidatableAmount(user);
         assertEq(pct, 10);
         assertEq(amt, 100 ether);
         
         // Trying to liquidate 200 ether should fail
         vm.prank(liquidator);
         vm.expectRevert("CircuitBreaker: exceeds liquidatable amount");
-        cWETH.transferFrom(user, liquidator, 200 ether);
+        cWBTC.transferFrom(user, liquidator, 200 ether);
         
         // Liquidate the allowed 100 ether
         vm.prank(liquidator);
-        cWETH.transferFrom(user, liquidator, 100 ether);
+        cWBTC.transferFrom(user, liquidator, 100 ether);
 
-        assertEq(cWETH.balanceOf(liquidator), 100 ether);
+        assertEq(cWBTC.balanceOf(liquidator), 100 ether);
     }
 
     function testLiquidationWindowExpiry() public {
@@ -133,7 +133,7 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation
         vm.prank(liquidator);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Advance past cooldown + window (10 + 5 + 1 = 16 blocks)
         vm.roll(block.number + 16);
@@ -141,20 +141,20 @@ contract LendingProtocolTest is Test {
         // Window expired
         vm.prank(liquidator);
         vm.expectRevert("CircuitBreaker: liquidation window expired");
-        cWETH.transferFrom(user, liquidator, 200 ether);
+        cWBTC.transferFrom(user, liquidator, 200 ether);
 
         // Must re-initiate
         vm.prank(liquidator);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Advance to valid window
         vm.roll(block.number + 11);
 
         // Now succeeds
         vm.prank(liquidator);
-        cWETH.transferFrom(user, liquidator, 200 ether);
+        cWBTC.transferFrom(user, liquidator, 200 ether);
 
-        assertEq(cWETH.balanceOf(liquidator), 200 ether);
+        assertEq(cWBTC.balanceOf(liquidator), 200 ether);
     }
 
     function testPositionBecomesHealthyDuringCooldown() public {
@@ -163,7 +163,7 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation
         vm.prank(liquidator);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // User adds more collateral, position becomes healthy again
         protocol.setHealthFactor(user, 1.5e18);
@@ -174,9 +174,9 @@ contract LendingProtocolTest is Test {
         // Liquidation still proceeds (cooldown was already initiated)
         // In a real protocol, you might want to cancel this
         vm.prank(liquidator);
-        cWETH.transferFrom(user, liquidator, 200 ether);
+        cWBTC.transferFrom(user, liquidator, 200 ether);
 
-        assertEq(cWETH.balanceOf(liquidator), 200 ether);
+        assertEq(cWBTC.balanceOf(liquidator), 200 ether);
     }
 
     function testMultipleLiquidators() public {
@@ -187,22 +187,22 @@ contract LendingProtocolTest is Test {
 
         // First liquidator initiates
         vm.prank(liquidator);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Second liquidator cannot re-initiate
         vm.prank(liquidator2);
         vm.expectRevert("Liquidation already initiated");
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // Advance past cooldown
         vm.roll(block.number + 11);
 
         // Any liquidator can execute (first come, first served)
         vm.prank(liquidator2);
-        cWETH.transferFrom(user, liquidator2, 200 ether);
+        cWBTC.transferFrom(user, liquidator2, 200 ether);
 
-        assertEq(cWETH.balanceOf(liquidator2), 200 ether);
-        assertEq(cWETH.balanceOf(liquidator), 0);
+        assertEq(cWBTC.balanceOf(liquidator2), 200 ether);
+        assertEq(cWBTC.balanceOf(liquidator), 0);
     }
 
     function testUserDepositsWorkDuringCooldown() public {
@@ -211,20 +211,20 @@ contract LendingProtocolTest is Test {
 
         // Initiate liquidation directly on token
         vm.prank(liquidator);
-        cWETH.initiateLiquidation(user);
+        cWBTC.initiateLiquidation(user);
 
         // User can still make deposits in a different transaction
         vm.roll(block.number + 1);
         
         address receiver = address(0x4);
         vm.startPrank(user);
-        cWETH.approve(receiver, 100 ether);
+        cWBTC.approve(receiver, 100 ether);
         vm.stopPrank();
 
         // Same block deposit should work
         vm.prank(receiver);
-        cWETH.transferFrom(user, receiver, 50 ether);
+        cWBTC.transferFrom(user, receiver, 50 ether);
 
-        assertEq(cWETH.balanceOf(receiver), 50 ether);
+        assertEq(cWBTC.balanceOf(receiver), 50 ether);
     }
 }
