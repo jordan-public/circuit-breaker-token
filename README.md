@@ -1,5 +1,9 @@
 # Circuit Breaker Token
 
+## Demo
+
+For a video demonstration and deployment addresses, please refer to the [Demo README](./demo/README.md).
+
 ## Abstract
 
 Circuit Breaker Token is a wrapped token implementation that introduces a **progressive time-delayed liquidation mechanism** to protect users from instant liquidations in DeFi lending protocols. By enforcing a mandatory cooldown period followed by a gradual liquidation window, users gain time to react and potentially save their positions, while still ensuring that legitimately unhealthy positions can eventually be liquidated.
