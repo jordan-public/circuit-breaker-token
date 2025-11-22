@@ -95,8 +95,8 @@ contract MockWBTC is ERC20 {
  */
 contract Deploy is Script {
     // Deployment parameters
-    uint256 constant COOLDOWN_BLOCKS = 5;      // Cooldown before liquidation can start
-    uint256 constant LIQUIDATION_WINDOW = 5;   // Window during which progressive liquidation occurs
+    uint256 constant COOLDOWN_BLOCKS = 15;     // Cooldown before liquidation can start (15 blocks = 15 seconds)
+    uint256 constant LIQUIDATION_WINDOW = 15;  // Window during which liquidation is allowed (15 blocks = 15 seconds)
     
     // Test users
     address alice = address(0xa11ce);

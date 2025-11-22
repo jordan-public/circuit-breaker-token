@@ -1,3 +1,3 @@
 #!/bin/sh
 . ./.env
-anvil --mnemonic "$PASSPHRASE" --block-time 3
+anvil --mnemonic "$PASSPHRASE" --block-time 1
