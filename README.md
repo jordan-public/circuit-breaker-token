@@ -58,6 +58,41 @@ This is not a functioning market - it's a technical failure mode where the proto
 
 The Circuit Breaker Token implements a **two-phase liquidation process** with a mandatory cooldown period that breaks the liquidation storm cycle:
 
+### Why This Approach?
+
+**We cannot modify existing lending protocols.** Major protocols like Aave, Compound, and Maker are governed by DAOs and have billions in TVL. Changing their core liquidation logic would require:
+- Extensive governance proposals and voting
+- Months or years of debate and auditing
+- Risk of breaking existing integrations
+- Potential security vulnerabilities from core changes
+
+**Instead, we use a wrapper token approach:**
+- cWETH wraps existing tokens (like WETH) with circuit breaker functionality
+- Lending protocols treat it as any other ERC20 collateral token
+- No changes needed to protocol code
+- Can be deployed and adopted immediately
+- Users opt-in by choosing to use cWETH instead of WETH
+
+### Protocol Compatibility
+
+Different lending protocols have different requirements for adding new collateral tokens:
+
+| Protocol | Type | Collateral Addition | Timeline | Notes |
+|----------|------|---------------------|----------|-------|
+| **Aave V3** | DAO-Governed | Requires governance vote | Weeks-Months | Must pass risk assessment, community vote |
+| **Compound V3** | DAO-Governed | Requires governance proposal | Weeks-Months | COMP holders vote on new collateral |
+| **Maker** | DAO-Governed | Requires governance vote | Months | Extensive risk analysis required |
+| **Morpho** | Permissionless | Instant deployment | Immediate | Can create markets for any ERC20 |
+| **Euler V2** | Permissionless | Instant deployment | Immediate | Permissionless vault creation |
+| **Silo Finance** | Permissionless | Instant deployment | Immediate | Isolated lending markets per asset |
+| **Radiant** | DAO-Governed | Requires governance vote | Weeks | Aave V2 fork with similar governance |
+
+**Immediate Deployment Options:**
+Protocols like Morpho, Euler V2, and Silo Finance allow permissionless market creation, meaning cWETH can be deployed and used immediately without any governance approval.
+
+**DAO Approval Options:**
+For major protocols like Aave and Compound, a governance proposal highlighting the liquidation storm protection would be needed. This is still easier than modifying core protocol code.
+
 ### Phase 1: Initiation
 Anyone can initiate liquidation for an unhealthy position, starting a cooldown timer (e.g., 10 blocks ≈ 2 minutes on Ethereum).
 
@@ -277,6 +312,36 @@ liquidator.initiateLiquidation(user);      // Start cooldown
 liquidator.liquidate(user, amount);        // Execute liquidation
 ```
 
+### Deployment Strategy
+
+**For Permissionless Protocols (Immediate):**
+1. Deploy cWETH contract
+2. Create a lending market (e.g., on Morpho or Euler V2)
+3. Users can start using cWETH as collateral immediately
+4. Market tests the concept with real usage
+
+**For DAO-Governed Protocols (Governance Required):**
+1. Deploy cWETH contract
+2. Gather usage data from permissionless deployments
+3. Create governance proposal with:
+   - Liquidation storm problem analysis
+   - cWETH solution explanation
+   - Interest rate premium justification (+0.5-1% APR)
+   - Risk assessment and audit results
+4. Community discussion and vote
+5. If approved, cWETH becomes accepted collateral
+
+**Adoption Path:**
+```
+Phase 1: Launch on permissionless protocols (Morpho, Euler, Silo)
+         → Prove concept, gather data, build community
+
+Phase 2: Governance proposals to major protocols (Aave, Compound)
+         → Use Phase 1 data to demonstrate value
+
+Phase 3: Widespread adoption as users prefer cascade-resistant collateral
+```
+
 ### Testing
 
 Run the test suite:
@@ -298,6 +363,8 @@ Test coverage includes:
 2. **Gas costs**: Adds overhead compared to instant liquidations
 3. **Liquidation delay**: Protocols may require higher collateralization ratios to account for the delay
 4. **Single collateral**: Current implementation focuses on one token; multi-collateral systems need adaptation
+5. **Adoption required**: Only effective if users choose cWETH over regular WETH - requires market education
+6. **Governance friction**: Major protocols require governance approval, which takes time
 
 ### Future Improvements
 
@@ -308,6 +375,8 @@ Test coverage includes:
 - [ ] Integration with common lending protocol interfaces (Aave, Compound)
 - [ ] Governance-adjustable parameters
 - [ ] Emergency pause mechanism
+- [ ] Template governance proposals for major protocols
+- [ ] Dashboard showing cWETH vs WETH liquidation statistics
 
 ## License
 
