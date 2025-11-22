@@ -222,8 +222,8 @@ const ABIS = {
         {
             "inputs": [
                 {"internalType": "address", "name": "user", "type": "address"},
-                {"internalType": "uint256", "name": "amount", "type": "uint256"},
-                {"internalType": "address", "name": "liquidator", "type": "address"}
+                {"internalType": "address", "name": "liquidator", "type": "address"},
+                {"internalType": "uint256", "name": "amount", "type": "uint256"}
             ],
             "name": "liquidate",
             "outputs": [],

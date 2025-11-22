@@ -1,8 +1,10 @@
 // Global state
 let web3;
+let web3Read; // Separate instance for read operations to avoid rate limiting
 let accounts;
 let currentNetwork;
-let contracts = {};
+let contracts = {}; // For write operations (transactions)
+let contractsRead = {}; // For read operations (calls)
 let updateInterval;
 
 // Initialize on page load
@@ -38,16 +40,59 @@ async function connectWallet() {
         // Request account access
         accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         
-        // Initialize Web3
-        web3 = new Web3(window.ethereum);
-        
-        // Get network info
-        const chainId = await web3.eth.getChainId();
+        // Get network info from MetaMask first
+        const tempWeb3 = new Web3(window.ethereum);
+        const chainId = await tempWeb3.eth.getChainId();
         currentNetwork = Object.values(NETWORKS).find(n => n.chainId === chainId);
         
         if (!currentNetwork) {
-            showNotification('Please connect to Anvil (localhost), Zircuit, or Rootstock Testnet', 'error');
-            return;
+            showNotification('Unsupported network. Switching to Anvil...', 'info');
+            
+            // Try to switch to Anvil network
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x7a69' }], // 31337 in hex
+                });
+                // Retry connection after switch
+                return await connectWallet();
+            } catch (switchError) {
+                // Network doesn't exist, add it
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x7a69',
+                                chainName: 'Anvil Local',
+                                nativeCurrency: {
+                                    name: 'Ethereum',
+                                    symbol: 'ETH',
+                                    decimals: 18
+                                },
+                                rpcUrls: ['http://127.0.0.1:8545'],
+                            }]
+                        });
+                        showNotification('Anvil network added! Connecting...', 'success');
+                        return await connectWallet();
+                    } catch (addError) {
+                        showNotification('Failed to add Anvil network', 'error');
+                        return;
+                    }
+                }
+                showNotification('Please connect to Anvil (localhost), Zircuit, or Rootstock', 'error');
+                return;
+            }
+        }
+
+        // Always use MetaMask provider for transactions
+        web3 = new Web3(window.ethereum);
+        
+        // For Anvil, use direct RPC connection for read operations to avoid rate limiting
+        if (currentNetwork.chainId === 31337) {
+            web3Read = new Web3('http://127.0.0.1:8545');
+        } else {
+            web3Read = web3; // For testnets, use same provider
         }
 
         // Initialize contracts
@@ -77,7 +122,9 @@ async function connectWallet() {
 function disconnectWallet() {
     accounts = null;
     web3 = null;
+    web3Read = null;
     contracts = {};
+    contractsRead = {};
     
     if (updateInterval) {
         clearInterval(updateInterval);
@@ -95,13 +142,24 @@ function disconnectWallet() {
 async function initializeContracts() {
     const addresses = currentNetwork.contracts;
     
+    // Write contracts (use MetaMask for transactions)
     contracts.wbtc = new web3.eth.Contract(ABIS.MockWBTC, addresses.wbtc);
     contracts.cWBTC = new web3.eth.Contract(ABIS.CircuitBreakerToken, addresses.cWBTC);
     contracts.protocol = new web3.eth.Contract(ABIS.LendingProtocol, addresses.protocol);
+    
+    // Read contracts (use direct RPC to avoid rate limiting)
+    contractsRead.wbtc = new web3Read.eth.Contract(ABIS.MockWBTC, addresses.wbtc);
+    contractsRead.cWBTC = new web3Read.eth.Contract(ABIS.CircuitBreakerToken, addresses.cWBTC);
+    contractsRead.protocol = new web3Read.eth.Contract(ABIS.LendingProtocol, addresses.protocol);
 }
 
 // Create a test loan
 async function createLoan() {
+    if (!web3 || !accounts || !contracts.wbtc) {
+        showNotification('Please connect your wallet first', 'error');
+        return;
+    }
+
     try {
         const collateralAmount = document.getElementById('collateral-amount').value;
         const healthFactor = document.getElementById('health-factor').value;
@@ -151,7 +209,8 @@ async function createLoan() {
 
 // Refresh liquidatable positions
 async function refreshPositions() {
-    if (!web3 || !accounts) {
+    if (!web3 || !accounts || !contractsRead.protocol) {
+        console.log('Wallet or contracts not initialized yet');
         return;
     }
 
@@ -186,18 +245,23 @@ async function createPositionCard(address) {
     card.className = 'position-item';
 
     try {
-        // Get position data
-        const collateral = await contracts.protocol.methods.getUserCollateral(address).call();
-        const healthFactor = await contracts.protocol.methods.healthFactor(address).call();
-        const canLiquidate = await contracts.protocol.methods.canLiquidate(address).call();
-        const liquidationData = await contracts.cWBTC.methods.getLiquidatableAmount(address).call();
-        const currentBlock = await web3.eth.getBlockNumber();
-        const blockedUntil = await contracts.cWBTC.methods.liquidationBlockedUntil(address).call();
-        const windowEnd = await contracts.cWBTC.methods.liquidationWindowEnd(address).call();
+        if (!contractsRead.protocol || !contractsRead.cWBTC) {
+            throw new Error('Contracts not initialized');
+        }
+
+        // Get position data (use contractsRead to avoid rate limiting)
+        const collateral = await contractsRead.protocol.methods.getUserCollateral(address).call();
+        const healthFactor = await contractsRead.protocol.methods.healthFactor(address).call();
+        const canLiquidate = await contractsRead.protocol.methods.canLiquidate(address).call();
+        const liquidationData = await contractsRead.cWBTC.methods.getLiquidatableAmount(address).call();
+        const currentBlock = await web3Read.eth.getBlockNumber();
+        const blockedUntil = await contractsRead.cWBTC.methods.liquidationBlockedUntil(address).call();
+        const windowEnd = await contractsRead.cWBTC.methods.liquidationWindowEnd(address).call();
 
         const collateralFormatted = web3.utils.fromWei(collateral, 'ether');
         const healthFactorPct = (parseInt(healthFactor) / 1e18 * 100).toFixed(1);
         const percentage = liquidationData.percentage;
+        const liquidatableAmountWei = liquidationData.amount;
         const liquidatableAmount = web3.utils.fromWei(liquidationData.amount, 'ether');
 
         // Determine status
@@ -256,7 +320,7 @@ async function createPositionCard(address) {
                 </div>
             ` : ''}
             <div class="liquidation-actions" id="actions-${address}">
-                ${createActionButtons(address, status, canLiquidate, percentage, liquidatableAmount)}
+                ${createActionButtons(address, status, canLiquidate, percentage, liquidatableAmount, liquidatableAmountWei)}
             </div>
         `;
 
@@ -269,7 +333,7 @@ async function createPositionCard(address) {
 }
 
 // Create action buttons based on position status
-function createActionButtons(address, status, canLiquidate, percentage, amount) {
+function createActionButtons(address, status, canLiquidate, percentage, amount, amountWei) {
     if (!canLiquidate) {
         return '<p class="info-text">Position is healthy - cannot be liquidated</p>';
     }
@@ -285,7 +349,7 @@ function createActionButtons(address, status, canLiquidate, percentage, amount) 
     }
 
     if (status === 'window' && parseInt(percentage) > 0) {
-        return `<button class="btn btn-danger" onclick="executeLiquidation('${address}', '${amount}')">
+        return `<button class="btn btn-danger" onclick="executeLiquidation('${address}', '${amountWei}')">
             Liquidate ${percentage}% (${parseFloat(amount).toFixed(4)} cWBTC)
         </button>`;
     }
@@ -312,13 +376,19 @@ async function initiateLiquidation(address) {
 }
 
 // Execute liquidation
-async function executeLiquidation(address, amount) {
+async function executeLiquidation(address, amountWei) {
     try {
         showNotification('Executing liquidation...', 'info');
         
-        const amountWei = web3.utils.toWei(amount, 'ether');
+        // Validate amount (already in wei)
+        if (!amountWei || amountWei === '0' || parseInt(amountWei) === 0) {
+            showNotification('Invalid liquidation amount', 'error');
+            return;
+        }
         
-        await contracts.protocol.methods.liquidate(address, amountWei, accounts[0])
+        console.log('Liquidating:', address, 'Amount (wei):', amountWei, 'Liquidator:', accounts[0]);
+        
+        await contracts.protocol.methods.liquidate(address, accounts[0], amountWei)
             .send({ from: accounts[0] });
 
         showNotification('Liquidation executed successfully!', 'success');
@@ -334,21 +404,19 @@ async function executeLiquidation(address, amount) {
 // Start updating block number
 function startBlockUpdates() {
     updateBlockNumber();
-    updateInterval = setInterval(updateBlockNumber, 3000);
+    updateInterval = setInterval(updateBlockNumber, 10000); // Poll every 10 seconds instead of 3
 }
 
 // Update block number
 async function updateBlockNumber() {
-    if (!web3) return;
+    if (!web3Read) return;
     
     try {
-        const blockNumber = await web3.eth.getBlockNumber();
+        const blockNumber = await web3Read.eth.getBlockNumber();
         document.getElementById('current-block').textContent = blockNumber;
         
-        // Also refresh positions to show updated percentages
-        if (document.getElementById('positions-list').children.length > 0) {
-            await refreshPositions();
-        }
+        // Don't auto-refresh positions to reduce RPC calls
+        // User can click "Refresh Positions" button manually
     } catch (error) {
         console.error('Error updating block number:', error);
     }

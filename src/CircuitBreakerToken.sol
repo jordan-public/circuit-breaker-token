@@ -72,11 +72,11 @@ contract CircuitBreakerToken is ERC20 {
         emit Withdraw(msg.sender, amount);
     }
 
-    /// @notice Initiate liquidation for a user, starting the cooldown period
-    /// @param user The user whose position may be liquidated
+    /// @notice Initiate liquidation (called by liquidation target protocol)
+    /// @param user The user to liquidate
     function initiateLiquidation(address user) external {
-        // Check if the position is actually liquidatable
-        require(liquidationTarget.canLiquidate(user), "Position not liquidatable");
+        // Query msg.sender (the actual protocol calling this) for liquidation eligibility
+        require(ILiquidationTarget(msg.sender).canLiquidate(user), "Position not liquidatable");
         
         uint256 existingCooldown = liquidationBlockedUntil[user];
         
@@ -94,13 +94,15 @@ contract CircuitBreakerToken is ERC20 {
         
         uint256 canLiquidateAt = block.number + cooldownBlocks;
         uint256 windowEnds = canLiquidateAt + liquidationWindow;
-        uint256 userBalance = balanceOf(user);
+        
+        // Query the caller (msg.sender is the protocol) for the user's collateral
+        uint256 userCollateral = ILiquidationTarget(msg.sender).getUserCollateral(user);
         
         liquidationBlockedUntil[user] = canLiquidateAt;
         liquidationWindowEnd[user] = windowEnds;
-        maxLiquidatableAmount[user] = userBalance;
+        maxLiquidatableAmount[user] = userCollateral;
         
-        emit LiquidationInitiated(user, canLiquidateAt, windowEnds, userBalance);
+        emit LiquidationInitiated(user, canLiquidateAt, windowEnds, userCollateral);
     }
     
     /// @notice Calculate how much can be liquidated based on time elapsed and collateral
@@ -195,6 +197,17 @@ contract CircuitBreakerToken is ERC20 {
         }
 
         // Circuit breaker logic only applies to transferFrom by third parties
+        // Allow transfers initiated by contracts (protocol deposits)
+        // EOAs can't have code, so if msg.sender has code, it's a contract
+        uint256 senderCodeSize;
+        assembly {
+            senderCodeSize := extcodesize(caller())
+        }
+        if (senderCodeSize > 0) {
+            super._update(from, to, amount);
+            return;
+        }
+        
         // Check if this is a user-initiated deposit (same block as approval)
         bool isUserDeposit = (approvalBlock[from][msg.sender] == block.number);
 

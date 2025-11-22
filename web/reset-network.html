@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset MetaMask Network</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #60a5fa;
+            margin-top: 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #334155;
+        }
+        .success { background: #166534; }
+        .error { background: #991b1b; }
+        ol {
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔄 Fix MetaMask Rate Limit</h1>
+        <p>MetaMask has rate-limited the localhost RPC endpoint. Follow these steps:</p>
+        
+        <h3>Option 1: Automatic Fix (Recommended)</h3>
+        <button onclick="resetNetwork()">Reset Network Connection</button>
+        
+        <h3>Option 2: Manual Fix</h3>
+        <ol>
+            <li>Open MetaMask</li>
+            <li>Click Settings → Networks</li>
+            <li>Find "Localhost 8545" and click Delete</li>
+            <li>Click "Add Network" manually:
+                <ul>
+                    <li><strong>Network Name:</strong> Anvil</li>
+                    <li><strong>RPC URL:</strong> http://127.0.0.1:8545</li>
+                    <li><strong>Chain ID:</strong> 31337</li>
+                    <li><strong>Currency Symbol:</strong> ETH</li>
+                </ul>
+            </li>
+            <li>Save and switch to the new network</li>
+            <li>Go back to <a href="index.html">the main app</a></li>
+        </ol>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function resetNetwork() {
+            const status = document.getElementById('status');
+            
+            try {
+                // Remove old network by switching away and adding fresh
+                status.className = 'status';
+                status.textContent = 'Step 1: Switching to mainnet temporarily...';
+                
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x1' }], // Mainnet
+                    });
+                } catch (e) {
+                    // Ignore if already on different network
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                status.textContent = 'Step 2: Adding fresh Anvil network...';
+                
+                // Add the network fresh
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x7a69', // 31337
+                        chainName: 'Anvil Fresh',
+                        nativeCurrency: {
+                            name: 'Ethereum',
+                            symbol: 'ETH',
+                            decimals: 18
+                        },
+                        rpcUrls: ['http://127.0.0.1:8545'],
+                    }]
+                });
+                
+                status.className = 'status success';
+                status.innerHTML = '✅ Success! Network reset. <br><br><a href="index.html" style="color: #60a5fa;">Go back to the app</a>';
+                
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = '❌ Error: ' + error.message + '\n\nPlease try the manual method instead.';
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -65,12 +65,18 @@ contract LendingProtocol is ILiquidationTarget {
     /// @param liquidator The address receiving the liquidated collateral
     /// @param amount The amount to liquidate
     function liquidate(address user, address liquidator, uint256 amount) external {
-        // The circuit breaker will enforce the cooldown period
-        collateralToken.transferFrom(user, liquidator, amount);
+        // Verify user has enough collateral
+        require(userCollateral[user] >= amount, "Insufficient collateral");
+        
+        // Update user's collateral
+        userCollateral[user] -= amount;
+        
+        // The circuit breaker will enforce the cooldown period and progressive limits
+        // Transfer from protocol's holdings to liquidator
+        collateralToken.transfer(liquidator, amount);
         
         // In a real protocol, you would also:
         // - Repay user's debt
-        // - Update user's position
         // - Give liquidator a bonus
         // - Update health factor
     }
