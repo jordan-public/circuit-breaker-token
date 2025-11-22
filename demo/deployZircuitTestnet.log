@@ -1,0 +1,269 @@
+jordan@p21 circuit-breaker-token % ./deployZircuitTestnet.sh 
+[⠊] Compiling...
+No files changed, compilation skipped
+Script ran successfully.
+
+== Logs ==
+  === CIRCUIT BREAKER TOKEN DEPLOYMENT ===
+  
+  1. Deploying Mock WBTC (underlying asset)...
+     WBTC deployed at: 0x7b3edD4a3b0aB650B12482C9a0502373479A9715
+  
+  2. Deploying Sample Lending Protocol (placeholder)...
+     Protocol placeholder deployed at: 0x0BC0d4533D9ecFFd21EEd49CbdFA677a384Fa96d
+  
+  3. Deploying Circuit Breaker Token (cWBTC)...
+     Cooldown blocks: 5
+     Liquidation window: 5
+     cWBTC deployed at: 0x43eA72b2c65b1e8A44150B1A438751e196B5C6F5
+  
+  4. Deploying Actual Lending Protocol...
+     LendingProtocol deployed at: 0x7Fb7CC0d318897FFBa25349Ac71a37cd2114Eb69
+  
+  === SETUP PHASE ===
+  
+  5. Setting up test users (Alice and Bob)...
+     Minted 100 WBTC to Alice: 0x00000000000000000000000000000000000A11cE
+     Minted 100 WBTC to Bob: 0x0000000000000000000000000000000000000B0b
+     Alice deposited 50 WBTC, received 50 cWBTC
+     Alice's remaining wallet: 50 WBTC (insufficient for full collateral)
+     Alice deposited 50 cWBTC as collateral in protocol
+     Alice's health factor set to 80% (UNHEALTHY - can be liquidated)
+  
+     Bob deposited 80 WBTC, received 80 cWBTC
+     Bob's remaining wallet: 20 WBTC (insufficient for full collateral)
+     Bob deposited 80 cWBTC as collateral in protocol
+     Bob's health factor set to 90% (UNHEALTHY - can be liquidated)
+  
+  === LIQUIDATION DEMONSTRATION ===
+  
+  6. Initiating liquidation for Alice (insufficient wallet balance)...
+     Liquidation initiated at block: 11753733
+     Cooldown ends at block: 11753738
+     Window ends at block: 11753743
+  
+  7. Simulating progressive liquidation window for Alice...
+     Alice's wallet balance (50 WBTC) < collateral (50 cWBTC)
+     Wallet/Collateral ratio: 100% -> Gets 50% cap initially
+     BUT cap decays to 100% over the window
+  
+     Block (cooldown): 11753734
+       Percentage: 0
+     Block (cooldown): 11753735
+       Percentage: 0
+     Block (cooldown): 11753736
+       Percentage: 0
+     Block (cooldown): 11753737
+       Percentage: 0
+     Block (cooldown): 11753738
+       Percentage: 10
+  
+     Cooldown complete! Liquidation window begins:
+  
+     Block: 11753738
+       Liquidatable %: 10
+       Amount (cWBTC): 0
+     Block: 11753739
+       Liquidatable %: 28
+       Amount (cWBTC): 0
+     Block: 11753740
+       Liquidatable %: 46
+       Amount (cWBTC): 0
+     Block: 11753741
+       Liquidatable %: 64
+       Amount (cWBTC): 0
+     Block: 11753742
+       Liquidatable %: 82
+       Amount (cWBTC): 0
+     Block: 11753743
+       Liquidatable %: 100
+       Amount (cWBTC): 0
+  
+  8. Initiating liquidation for Bob (has wallet balance)...
+     Liquidation initiated at block: 11753743
+  
+  9. Simulating progressive liquidation window for Bob...
+     Bob's wallet balance (20 WBTC) < collateral (80 cWBTC)
+     Wallet/Collateral ratio: 25% -> No cap protection (< 50% threshold)
+  
+     Block (cooldown): 11753744
+       Percentage: 0
+     Block (cooldown): 11753745
+       Percentage: 0
+     Block (cooldown): 11753746
+       Percentage: 0
+     Block (cooldown): 11753747
+       Percentage: 0
+     Block (cooldown): 11753748
+       Percentage: 10
+  
+     Cooldown complete! Liquidation window begins:
+  
+     Block: 11753748
+       Liquidatable %: 10
+       Amount (cWBTC): 0
+     Block: 11753749
+       Liquidatable %: 28
+       Amount (cWBTC): 0
+     Block: 11753750
+       Liquidatable %: 46
+       Amount (cWBTC): 0
+     Block: 11753751
+       Liquidatable %: 64
+       Amount (cWBTC): 0
+     Block: 11753752
+       Liquidatable %: 82
+       Amount (cWBTC): 0
+     Block: 11753753
+       Liquidatable %: 100
+       Amount (cWBTC): 0
+  
+  === DEPLOYMENT COMPLETE ===
+  
+  Deployed Contracts:
+    WBTC (Mock): 0x7b3edD4a3b0aB650B12482C9a0502373479A9715
+    cWBTC (Circuit Breaker): 0x43eA72b2c65b1e8A44150B1A438751e196B5C6F5
+    LendingProtocol: 0x7Fb7CC0d318897FFBa25349Ac71a37cd2114Eb69
+  
+  Key Observations:
+    1. Progressive liquidation grows from 10% to max allowed over 5 blocks
+    2. Users with wallet balance get protection caps that decay over time
+    3. Alice (100% ratio) starts at 50% cap, decays to 100%
+    4. Bob (25% ratio) has no cap - normal progressive curve
+    5. This mechanism balances user protection with protocol solvency
+  
+
+## Setting up 1 EVM.
+==========================
+Simulated On-chain Traces:
+
+  [468612] → new MockWBTC@0x7b3edD4a3b0aB650B12482C9a0502373479A9715
+    ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x823eF872d97f3Cffd1e3D491c9560EB0D3886D56, value: 1000000000000000000000 [1e21])
+    └─ ← [Return] 1883 bytes of code
+
+  [272175] → new LendingProtocol@0x0BC0d4533D9ecFFd21EEd49CbdFA677a384Fa96d
+    └─ ← [Return] 1358 bytes of code
+
+  [1091116] → new CircuitBreakerToken@0x43eA72b2c65b1e8A44150B1A438751e196B5C6F5
+    └─ ← [Return] 5217 bytes of code
+
+  [272175] → new LendingProtocol@0x7Fb7CC0d318897FFBa25349Ac71a37cd2114Eb69
+    └─ ← [Return] 1358 bytes of code
+
+  [29684] MockWBTC::mint(0x00000000000000000000000000000000000A11cE, 100000000000000000000 [1e20])
+    ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x00000000000000000000000000000000000A11cE, value: 100000000000000000000 [1e20])
+    └─ ← [Stop]
+
+  [29684] MockWBTC::mint(0x0000000000000000000000000000000000000B0b, 100000000000000000000 [1e20])
+    ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x0000000000000000000000000000000000000B0b, value: 100000000000000000000 [1e20])
+    └─ ← [Stop]
+
+  [22527] LendingProtocol::setHealthFactor(0x00000000000000000000000000000000000A11cE, 800000000000000000 [8e17])
+    └─ ← [Stop]
+
+  [22527] LendingProtocol::setHealthFactor(0x0000000000000000000000000000000000000B0b, 900000000000000000 [9e17])
+    └─ ← [Stop]
+
+  [60198] LendingProtocol::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
+    ├─ [57000] CircuitBreakerToken::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
+    │   ├─ [2571] LendingProtocol::canLiquidate(0x00000000000000000000000000000000000A11cE) [staticcall]
+    │   │   └─ ← [Return] true
+    │   ├─ emit LiquidationInitiated(user: 0x00000000000000000000000000000000000A11cE, canLiquidateAt: 11753741 [1.175e7], windowEndsAt: 11753746 [1.175e7], maxAmount: 0)
+    │   └─ ← [Stop]
+    └─ ← [Stop]
+
+  [60198] LendingProtocol::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
+    ├─ [57000] CircuitBreakerToken::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
+    │   ├─ [2571] LendingProtocol::canLiquidate(0x0000000000000000000000000000000000000B0b) [staticcall]
+    │   │   └─ ← [Return] true
+    │   ├─ emit LiquidationInitiated(user: 0x0000000000000000000000000000000000000B0b, canLiquidateAt: 11753741 [1.175e7], windowEndsAt: 11753746 [1.175e7], maxAmount: 0)
+    │   └─ ← [Stop]
+    └─ ← [Stop]
+
+
+==========================
+
+Chain 48898
+
+Estimated gas price: 0.000000509 gwei
+
+Estimated total gas used for script: 3749149
+
+Estimated amount required: 0.000000001908316841 ETH
+
+==========================
+
+##### 48898
+✅  [Success] Hash: 0xebd383f4aa29eb0a555781576eafda3ebbf470e5597e5cf7ecd143ab158cf38e
+Contract Address: 0x7b3edD4a3b0aB650B12482C9a0502373479A9715
+Block: 11753741
+Paid: 0.00000000014430654 ETH (565908 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x73bb7753e5ee36616563aca22ad65fd58f1e26f3efe9e974b2a2a4ebdd67eebb
+Block: 11753742
+Paid: 0.00000000001303662 ETH (51124 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x281d408a3ac1aad4c13315a9099b172416264b1777f6526976ad2fc6e8dbec7f
+Block: 11753742
+Paid: 0.000000000011208525 ETH (43955 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x947d8e46ca712679e62b901425cac0e9a1bfc2aad1cc1ab8deabadb10cf38997
+Contract Address: 0x43eA72b2c65b1e8A44150B1A438751e196B5C6F5
+Block: 11753742
+Paid: 0.00000000031607301 ETH (1239502 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x5ecc48e5a8b480a5adfee29403fec4f095166d6c495dafed5ade492542310d11
+Block: 11753742
+Paid: 0.00000000002076057 ETH (81414 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x9c4cc310acc94b201d5b18d11a8bffa7eca79d7bbf0c2d23669ac601514e886c
+Block: 11753742
+Paid: 0.000000000011205465 ETH (43943 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x05c6d7c45c3af3d636509c87387a91ceced67b43fd6e832274602d7d58687a07
+Block: 11753742
+Paid: 0.00000000001303356 ETH (51112 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0xccd41e69e6d6d271cc0c8eb1ceb77e0f261b5019903f8298b61692e6cf2c8f96
+Block: 11753742
+Paid: 0.00000000002076363 ETH (81426 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x67cb72084cb008db2c28d7c9ab8288c4bc658fc853fa53d562931e61e4e7366e
+Contract Address: 0x0BC0d4533D9ecFFd21EEd49CbdFA677a384Fa96d
+Block: 11753742
+Paid: 0.000000000088670895 ETH (347729 gas * 0.000000255 gwei)
+
+
+##### 48898
+✅  [Success] Hash: 0x7700643069e9b51b8d8fc56f8ffb9f2b52d4ed2b984988ccaf785ba25303f650
+Contract Address: 0x7Fb7CC0d318897FFBa25349Ac71a37cd2114Eb69
+Block: 11753742
+Paid: 0.000000000088729035 ETH (347957 gas * 0.000000255 gwei)
+
+✅ Sequence #1 on 48898 | Total Paid: 0.00000000072778785 ETH (2854070 gas * avg 0.000000255 gwei)
+                                                                                                  
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /Users/jordan/circuit-breaker-token/broadcast/CircuitBreakerToken.s.sol/48898/run-latest.json
+
+Sensitive values saved to: /Users/jordan/circuit-breaker-token/cache/CircuitBreakerToken.s.sol/48898/run-latest.json
+
