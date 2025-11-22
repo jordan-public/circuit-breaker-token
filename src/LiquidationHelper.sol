@@ -1,17 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+/// @notice Writes per-user cooldown to caller storage, then reverts.
+/// @dev This is invoked with DELEGATECALL from cWETH, so it writes to cWETH storage.
 contract LiquidationHelper {
-    // writes: liquidationBlockedUntil[user] = block.number + 10
-    function markBlocked(address user) external {
-        uint256 unblockBlock = block.number + 10;
+    // slot indices must match cWETH storage layout
+    // liquidationBlockedUntil: mapping(address => uint256) is stored at slot 2
 
-        // slot = keccak256(user . slot_index)
-        uint256 slot = uint256(keccak256(abi.encode(user, uint256(1))));
+    uint256 public constant COOLDOWN_SLOT = 2; // for keccak(user,2)
+
+    function markBlocked(address user, uint256 cooldownBlocks) external {
+        uint256 unblockAt = block.number + cooldownBlocks;
+
+        // Compute storage slot for liquidationBlockedUntil[user]
+        uint256 slot = uint256(keccak256(abi.encode(user, COOLDOWN_SLOT)));
 
         assembly {
-            sstore(slot, unblockBlock)
-            revert(0,0) // inner revert only
+            sstore(slot, unblockAt)
+            revert(0, 0)
         }
     }
 }
