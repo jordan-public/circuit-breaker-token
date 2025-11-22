@@ -114,24 +114,28 @@ contract Deploy is Script {
         console2.log("   WBTC deployed at:", address(wbtc));
         
         console2.log("");
-        console2.log("2. Deploying Circuit Breaker Token (cWBTC)...");
+        console2.log("2. Deploying Sample Lending Protocol (placeholder)...");
+        // We need to deploy a placeholder first to get an address for CircuitBreakerToken
+        LendingProtocol protocolPlaceholder = new LendingProtocol(address(1)); // Temporary
+        console2.log("   Protocol placeholder deployed at:", address(protocolPlaceholder));
+        
+        console2.log("");
+        console2.log("3. Deploying Circuit Breaker Token (cWBTC)...");
         console2.log("   Cooldown blocks:", COOLDOWN_BLOCKS);
         console2.log("   Liquidation window:", LIQUIDATION_WINDOW);
         
-        // Deploy CircuitBreakerToken - note: we need to deploy LendingProtocol first
-        // to pass its address, so we use a temporary approach
         CircuitBreakerToken cWBTC = new CircuitBreakerToken(
             "Circuit Breaker Wrapped Bitcoin",
             "cWBTC",
             address(wbtc),
             COOLDOWN_BLOCKS,
             LIQUIDATION_WINDOW,
-            address(0) // Temporary, will set up protocol next
+            address(protocolPlaceholder) // Use protocol address
         );
         console2.log("   cWBTC deployed at:", address(cWBTC));
         
         console2.log("");
-        console2.log("3. Deploying Sample Lending Protocol...");
+        console2.log("4. Deploying Actual Lending Protocol...");
         LendingProtocol protocol = new LendingProtocol(address(cWBTC));
         console2.log("   LendingProtocol deployed at:", address(protocol));
         
@@ -143,7 +147,7 @@ contract Deploy is Script {
         console2.log("");
         
         // ===== SETUP TEST USERS =====
-        console2.log("4. Setting up test users (Alice and Bob)...");
+        console2.log("5. Setting up test users (Alice and Bob)...");
         
         // Mint WBTC to Alice and Bob
         wbtc.mint(alice, 100 * 10**18); // 100 WBTC to Alice
@@ -195,7 +199,7 @@ contract Deploy is Script {
         console2.log("");
         
         // ===== ALICE'S LIQUIDATION (Normal Progressive) =====
-        console2.log("5. Initiating liquidation for Alice (insufficient wallet balance)...");
+        console2.log("6. Initiating liquidation for Alice (insufficient wallet balance)...");
         protocol.initiateLiquidation(alice);
         uint256 aliceStartBlock = block.number;
         console2.log("   Liquidation initiated at block:", aliceStartBlock);
@@ -203,7 +207,7 @@ contract Deploy is Script {
         console2.log("   Window ends at block:", aliceStartBlock + COOLDOWN_BLOCKS + LIQUIDATION_WINDOW);
         
         console2.log("");
-        console2.log("6. Simulating progressive liquidation window for Alice...");
+        console2.log("7. Simulating progressive liquidation window for Alice...");
         console2.log("   Alice's wallet balance (50 WBTC) < collateral (50 cWBTC)");
         console2.log("   Wallet/Collateral ratio: 100% -> Gets 50% cap initially");
         console2.log("   BUT cap decays to 100% over the window");
@@ -235,13 +239,13 @@ contract Deploy is Script {
         
         // ===== BOB'S LIQUIDATION (With Wallet Balance) =====
         console2.log("");
-        console2.log("7. Initiating liquidation for Bob (has wallet balance)...");
+        console2.log("8. Initiating liquidation for Bob (has wallet balance)...");
         protocol.initiateLiquidation(bob);
         uint256 bobStartBlock = block.number;
         console2.log("   Liquidation initiated at block:", bobStartBlock);
         
         console2.log("");
-        console2.log("8. Simulating progressive liquidation window for Bob...");
+        console2.log("9. Simulating progressive liquidation window for Bob...");
         console2.log("   Bob's wallet balance (20 WBTC) < collateral (80 cWBTC)");
         console2.log("   Wallet/Collateral ratio: 25% -> No cap protection (< 50% threshold)");
         console2.log("");
