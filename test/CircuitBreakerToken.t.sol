@@ -226,8 +226,8 @@ contract CircuitBreakerTokenTest is Test {
     }
     
     function testWalletBalanceReducesLiquidation() public {
-        // User has significant wallet balance
-        underlying.mint(user, 600 ether); // 60% of collateral
+        // User has significant wallet balance (60% of collateral)
+        underlying.mint(user, 600 ether);
         
         liquidationTarget.setLiquidatable(user, true);
         liquidationTarget.setCollateral(user, 1000 ether);
@@ -245,13 +245,81 @@ contract CircuitBreakerTokenTest is Test {
         // Advance to start of window
         vm.roll(block.number + 10);
         
-        // Wallet balance 600e, collateral 1000e -> ratio = 60%
-        // Base percentage at start = 10%
-        // Reduction = 60% * 10% / 300 = 2%
-        // Final = 10% - 2% = 8%
+        // Wallet balance 600, collateral 1000 -> ratio = 60%
+        // Since ratio >= 50%, base cap = 70%, decay from 70% to 100%
+        // At block 0: cap = 70%, base = 10% -> final = 10%
         (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
-        assertEq(pct, 8);
-        assertEq(amt, 80 ether);
+        assertEq(pct, 10);
+        assertEq(amt, 100 ether);
+        
+        // Advance halfway through window (2.5 blocks)
+        vm.roll(block.number + 2);
+        
+        // At block 2 of 5:
+        // Base percentage = 10% + 90% * 2/5 = 46%
+        // Cap = 70% + 30% * 2/5 = 82%
+        // Final = min(46%, 82%) = 46%
+        (uint256 pct2, uint256 amt2) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct2, 46);
+        assertEq(amt2, 460 ether);
+        
+        // Advance to end of window
+        vm.roll(block.number + 3);
+        
+        // At block 5 of 5:
+        // Base = 100%, Cap decayed to 100%
+        // User had time to act but didn't - now fully liquidatable
+        (uint256 pct3, uint256 amt3) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct3, 100);
+        assertEq(amt3, 1000 ether);
+    }
+    
+    function testWalletBalanceLargeCap() public {
+        // User has wallet balance >= collateral (100%+)
+        underlying.mint(user, 1200 ether);
+        
+        liquidationTarget.setLiquidatable(user, true);
+        liquidationTarget.setCollateral(user, 1000 ether);
+        
+        vm.roll(block.number + 1);
+        vm.prank(user);
+        cWETH.approve(aave, 1000 ether);
+        
+        vm.roll(block.number + 1);
+        
+        // Initiate liquidation
+        vm.prank(aave);
+        cWETH.initiateLiquidation(user);
+        
+        // Advance to start of window
+        vm.roll(block.number + 10);
+        
+        // Wallet balance 1200, collateral 1000 -> ratio = 120%
+        // Since ratio >= 100%, base cap = 50%, decays from 50% to 100%
+        // At block 0: cap = 50%, base = 10% -> final = 10%
+        (uint256 pct, uint256 amt) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct, 10);
+        assertEq(amt, 100 ether);
+        
+        // Advance to middle of window
+        vm.roll(block.number + 2);
+        
+        // At block 2 of 5:
+        // Base = 10% + 90% * 2/5 = 46%
+        // Cap = 50% + 50% * 2/5 = 70%
+        // Final = min(46%, 70%) = 46%
+        (uint256 pct2, uint256 amt2) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct2, 46);
+        assertEq(amt2, 460 ether);
+        
+        // Advance to end of window
+        vm.roll(block.number + 3);
+        
+        // At block 5: both base and cap reach 100%
+        // User refused to act despite having funds - fully liquidatable
+        (uint256 pct3, uint256 amt3) = cWETH.getLiquidatableAmount(user);
+        assertEq(pct3, 100);
+        assertEq(amt3, 1000 ether);
     }
 
     function testCannotInitiateLiquidationForHealthyPosition() public {

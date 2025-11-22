@@ -65,7 +65,13 @@ This is not a functioning market - it's a technical failure mode where the proto
 
 ## Solution
 
-The Circuit Breaker Token implements a **two-phase liquidation process** with a mandatory cooldown period that breaks the liquidation storm cycle:
+The Circuit Breaker Token implements a **two-phase progressive liquidation process** with a mandatory cooldown period that breaks the liquidation storm cycle.
+
+### Overview
+
+The system works in two phases:
+1. **Initiation Phase**: Anyone can initiate liquidation for an unhealthy position, triggering a cooldown timer
+2. **Progressive Execution Phase**: After cooldown, liquidation becomes possible with an increasing percentage over time
 
 ### Why This Approach?
 
@@ -102,21 +108,156 @@ Protocols like Morpho, Euler V2, and Silo Finance allow permissionless market cr
 **DAO Approval Options:**
 For major protocols like Aave and Compound, a governance proposal highlighting the liquidation storm protection would be needed. Multiple tokens can be proposed together (e.g., cWETH, cUSDC, cDAI) or individually.
 
-### Phase 1: Initiation
-Anyone can initiate liquidation for an unhealthy position, starting a cooldown timer (e.g., 10 blocks ≈ 2 minutes on Ethereum).
+### Phase 1: Initiation & Cooldown
 
-### Phase 2: Execution Window
-After the cooldown expires, there's a limited time window (e.g., 5 blocks) during which the liquidation can be executed. If not executed in time, the process must be re-initiated.
+Anyone can initiate liquidation for an unhealthy position, starting a **cooldown timer** (e.g., 10 blocks ≈ 2 minutes on Ethereum).
 
-### How This Prevents Liquidation Storms
-
-**During the cooldown period:**
+**During cooldown:**
 - Users can add collateral or repay debt to save their positions
 - Natural market buyers have time to step in and stabilize prices
 - The cascade is broken - liquidations don't trigger instantly
 - Price discovery can happen at more rational levels
 
-**Result:** Instead of 1000 positions liquidating in 10 blocks, they're spread over time. Most users save their positions during cooldown, and genuine price support emerges. Only positions that are fundamentally overleveraged (not just caught in a cascade) end up being liquidated.
+**Snapshot at initiation:** The system records the user's balance at initiation time as `maxLiquidatableAmount`. This prevents gaming by transferring tokens during cooldown.
+
+### Phase 2: Progressive Execution Window
+
+After the cooldown expires, liquidation becomes possible with a **progressive percentage curve** over a limited window (e.g., 5 blocks):
+
+#### Progressive Liquidation Curve
+
+The liquidatable percentage starts at **10%** and increases linearly to **100%** over the execution window:
+
+```
+Percentage = 10% + (90% × blocks_into_window / window_size)
+```
+
+**Example with 5-block window:**
+
+| Block in Window | Base % | Amount (of 1000 tokens) |
+|----------------|--------|-------------------------|
+| 0 (start) | 10% | 100 tokens |
+| 1 | 28% | 280 tokens |
+| 2 | 46% | 460 tokens |
+| 3 | 64% | 640 tokens |
+| 4 | 82% | 820 tokens |
+| 5 (end) | 100% | 1000 tokens |
+
+**Benefits:**
+- **Gradual approach**: Users have multiple opportunities to add collateral incrementally
+- **Market stability**: Prevents large instant liquidations that crash prices
+- **Liquidator incentive**: Early action rewarded with access to smaller amounts; waiting gets more but risks window expiry
+- **Fairness**: User maintains partial position even if they can't fully save it
+
+#### Wallet Balance Protection Cap (Time-Decay)
+
+The system checks the user's **wallet balance** of the underlying token to **initially cap the maximum liquidatable percentage**, giving users with available funds a grace period. However, **the cap decays over time** to ensure users who refuse to act eventually face full liquidation:
+
+```solidity
+uint256 maxAllowedPct = 100%;  // Default
+uint256 baseCap;
+
+if (walletBalance > 0 && userCollateral > 0) {
+    walletToCollateralRatio = (walletBalance × 100) / userCollateral
+    
+    // Determine initial cap based on wallet balance
+    if (walletToCollateralRatio >= 100%) {
+        baseCap = 50%   // Start at 50% if user has enough to fully cover
+    } else if (walletToCollateralRatio >= 50%) {
+        baseCap = 70%   // Start at 70% if user has significant funds
+    } else {
+        baseCap = 100%  // No protection if insufficient funds
+    }
+    
+    // Decay the protection: cap increases from baseCap to 100% over window
+    if (baseCap < 100%) {
+        capIncrease = ((100% - baseCap) × blocks_into_window) / window_size
+        maxAllowedPct = baseCap + capIncrease
+    }
+}
+
+finalPercentage = min(basePercentage, maxAllowedPct)
+```
+
+**Example Scenarios with Time Decay:**
+
+**Scenario 1: User with 60% wallet balance (baseCap = 70%)**
+
+| Block | Base % | Cap % (70→100) | Final % | Amount (of 1000) |
+|-------|--------|----------------|---------|------------------|
+| 0 | 10% | 70% | **10%** | 100 tokens |
+| 1 | 28% | 76% | **28%** | 280 tokens |
+| 2 | 46% | 82% | **46%** | 460 tokens |
+| 3 | 64% | 88% | **64%** | 640 tokens |
+| 4 | 82% | 94% | **82%** | 820 tokens |
+| 5 | 100% | 100% | **100%** | 1000 tokens |
+
+**Scenario 2: User with 120% wallet balance (baseCap = 50%)**
+
+| Block | Base % | Cap % (50→100) | Final % | Amount (of 1000) |
+|-------|--------|----------------|---------|------------------|
+| 0 | 10% | 50% | **10%** | 100 tokens |
+| 1 | 28% | 60% | **28%** | 280 tokens |
+| 2 | 46% | 70% | **46%** | 460 tokens |
+| 3 | 64% | 80% | **64%** | 640 tokens |
+| 4 | 82% | 90% | **82%** | 820 tokens |
+| 5 | 100% | 100% | **100%** | 1000 tokens |
+
+**Key Point:** The cap provides **early protection** but **decays to allow full liquidation** by the end of the window. This balances user protection with protocol security.
+
+**Rationale:** 
+1. **Grace Period**: Users with funds get extra time at the start (lower percentages)
+2. **Incentive to Act**: If users don't add collateral, protection diminishes
+3. **No Permanent Advantage**: Users who refuse to act despite having funds eventually face full liquidation
+4. **Fair to Protocol**: Lenders aren't indefinitely exposed to undercollateralized positions
+5. **Fair to Liquidators**: They can eventually liquidate the full amount if user doesn't respond
+
+**User Strategy:**
+- **Early in window (blocks 0-2)**: Protected from large liquidations, have time to assess and add collateral
+- **Mid window (blocks 2-4)**: Protection decaying, should act if want to save position  
+- **Late in window (block 5)**: No protection remains, must have acted by now
+
+#### Window Expiration
+
+If no liquidation occurs within the window, the entire process **resets**:
+- All state is cleared (`liquidationBlockedUntil`, `liquidationWindowEnd`, `maxLiquidatableAmount`)
+- Position must be re-evaluated with `canLiquidate()` before re-initiating
+- This ensures stale liquidations can't be executed after a position recovers
+
+### How This Prevents Liquidation Storms
+
+**Without circuit breaker:**
+```
+Block N:   ETH = $2000, 1000 positions healthy
+Block N+1: Price drops to $1980 → 50 positions liquidated instantly
+           → Forced selling crashes price to $1940
+Block N+2: 200 more positions liquidated → Price at $1860
+Block N+3: Cascade continues... → Price at $1720
+Result:    Artificial crash due to forced selling spiral
+```
+
+**With circuit breaker:**
+```
+Block N:   ETH = $2000, 1000 positions healthy
+Block N+1: Price drops to $1980 → 50 liquidations initiated (10-block cooldown starts)
+Block N+2-11: Users add collateral from wallets, 40 positions saved
+Block N+11: Window opens, only 10% of remaining 10 positions liquidatable
+           → Users with wallet balances have lower caps (50-70% vs 100%)
+           → Minimal selling pressure (1 position, 10% liquidated)
+Block N+12-16: Progressive liquidation with time-decaying wallet caps
+           → Early blocks: Protected (caps at 50-70%)
+           → Later blocks: Protection decays as users have had time to act
+           → Users who act save positions; those who don't face full liquidation by end
+           → Natural price discovery, market buyers step in
+Result:    Most positions saved during cooldown. Users with funds get grace period
+           but must act. Only truly overleveraged or unresponsive users fully liquidated.
+```
+
+**Result:** Instead of 1000 positions 100% liquidating instantly, the system:
+1. Spreads liquidations over time (cooldown + progressive window)
+2. Gives users with wallet balances extra protection early in the window
+3. Decays protection over time to ensure users who refuse to act still get liquidated
+4. Only fully liquidates positions that are fundamentally overleveraged OR where users had funds but chose not to act
 
 ### Trade-off: Interest Rate Adjustment
 
@@ -143,7 +284,7 @@ sequenceDiagram
     Liquidator->>cToken: initiateLiquidation(user)
     cToken->>Protocol: canLiquidate(user)?
     Protocol-->>cToken: true
-    cToken->>cToken: Set cooldown timer
+    cToken->>cToken: Set cooldown timer<br/>Record maxLiquidatableAmount
     cToken-->>Liquidator: ✓ Liquidation initiated
     
     Note over User,cToken: Cooldown period (10 blocks)
@@ -152,14 +293,22 @@ sequenceDiagram
     User->>Protocol: addCollateral() or repayDebt()
     Note over User: Position may become healthy again
     
-    Note over User,cToken: Cooldown expires
-    Note over User,cToken: Execution window (5 blocks)
+    Note over User,cToken: Cooldown expires - Window begins
+    Note over User,cToken: Progressive window (5 blocks)<br/>10% → 100% liquidatable
+    
+    Liquidator->>cToken: getLiquidatableAmount(user)
+    cToken->>cToken: Calculate based on:<br/>- Blocks elapsed<br/>- Wallet balance<br/>- Collateral amount
+    cToken-->>Liquidator: (percentage, amount)
     
     Liquidator->>cToken: transferFrom(user, liquidator, amount)
-    cToken->>cToken: Check if in valid window
-    alt Window valid
+    cToken->>cToken: Check window validity<br/>Check amount <= max allowed
+    alt Amount valid and window active
+        cToken->>cToken: Clear liquidation state
         cToken-->>Liquidator: ✓ Liquidation executed
+    else Amount exceeds limit
+        cToken-->>Liquidator: ✗ Revert: exceeds liquidatable amount
     else Window expired
+        cToken->>cToken: Clear liquidation state
         cToken-->>Liquidator: ✗ Revert: window expired
     end
 ```
@@ -181,18 +330,21 @@ stateDiagram-v2
     note right of NoLiquidation
         liquidationBlockedUntil = 0
         liquidationWindowEnd = 0
+        maxLiquidatableAmount = 0
     end note
     
     note right of Cooldown
         liquidationBlockedUntil = block + 10
         liquidationWindowEnd = block + 15
+        maxLiquidatableAmount = userBalance
         Status: Blocked
     end note
     
     note right of ExecutionWindow
         block >= liquidationBlockedUntil
         block <= liquidationWindowEnd
-        Status: Can liquidate
+        Progressive: 10% → 100%
+        Status: Can liquidate (with limits)
     end note
 ```
 
@@ -200,7 +352,7 @@ stateDiagram-v2
 
 ```mermaid
 gantt
-    title Liquidation Timeline (10 block cooldown, 5 block window)
+    title Liquidation Timeline (10 block cooldown, 5 block progressive window)
     dateFormat X
     axisFormat Block %L
     
@@ -211,13 +363,18 @@ gantt
     section Liquidation State
     Initiation (Block 2)      :milestone, 2, 0
     Cooldown Period           :crit, 2, 10
-    Execution Window          :active, 12, 5
-    Window Expired            :done, 17, 2
+    10% Liquidatable          :active, 12, 1
+    28% Liquidatable          :active, 13, 1
+    46% Liquidatable          :active, 14, 1
+    64% Liquidatable          :active, 15, 1
+    82% Liquidatable          :active, 16, 1
+    100% Liquidatable         :active, 17, 1
+    Window Expired            :done, 18, 2
     
     section Actions
     User can save position    :active, 2, 10
-    Liquidator can execute    :crit, 12, 5
-    Must re-initiate          :done, 17, 2
+    Progressive liquidation   :crit, 12, 6
+    Must re-initiate          :done, 18, 2
 ```
 
 ## Implementation Notes

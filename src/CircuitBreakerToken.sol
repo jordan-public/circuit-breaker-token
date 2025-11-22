@@ -138,23 +138,34 @@ contract CircuitBreakerToken is ERC20 {
         uint256 walletBalance = underlying.balanceOf(user);
         uint256 userCollateral = liquidationTarget.getUserCollateral(user);
         
-        // If user has significant wallet balance relative to collateral, give more time
-        // (reduce liquidatable percentage)
+        // If user has significant wallet balance, cap max liquidation BUT decay over time
+        // This gives users with funds a grace period, but if they refuse to act,
+        // the cap gradually increases until full liquidation is possible
+        uint256 maxAllowedPct = MAX_LIQUIDATION_PCT;
         if (walletBalance > 0 && userCollateral > 0) {
             uint256 walletToCollateralRatio = (walletBalance * 100) / userCollateral;
             
-            // If wallet has >50% of collateral amount, reduce liquidatable percentage
-            if (walletToCollateralRatio > 50) {
-                uint256 reduction = (walletToCollateralRatio * percentage) / 300; // Max 33% reduction
-                if (reduction < percentage) {
-                    percentage -= reduction;
-                }
+            // Determine base cap based on wallet balance
+            uint256 baseCap;
+            if (walletToCollateralRatio >= 100) {
+                baseCap = 50;  // Start at 50% if user has enough to fully cover
+            } else if (walletToCollateralRatio >= 50) {
+                baseCap = 70;  // Start at 70% if user has significant funds
+            } else {
+                baseCap = 100; // No cap if insufficient wallet balance
+            }
+            
+            // Decay the protection over the window: cap increases from baseCap to 100%
+            // This gives users time to act, but ensures eventual full liquidation if they don't
+            if (baseCap < 100) {
+                uint256 capIncrease = ((100 - baseCap) * blocksIntoWindow) / totalWindowBlocks;
+                maxAllowedPct = baseCap + capIncrease;
             }
         }
         
-        // Cap at max percentage
-        if (percentage > MAX_LIQUIDATION_PCT) {
-            percentage = MAX_LIQUIDATION_PCT;
+        // Cap percentage at the maximum allowed based on wallet balance and time decay
+        if (percentage > maxAllowedPct) {
+            percentage = maxAllowedPct;
         }
         
         // Calculate actual amount based on percentage of max liquidatable amount
