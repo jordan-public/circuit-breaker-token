@@ -5,7 +5,8 @@ pragma solidity ^0.8.20;
 /// @dev Invoked with DELEGATECALL from cWETH.
 contract LiquidationHelper {
     // Must match cWETH storage slot index for liquidationBlockedUntil
-    uint256 public constant COOLDOWN_SLOT = 2;
+    // ERC20 uses slots 0-4, cWETH adds: lastExpectedAllowance (5), liquidationBlockedUntil (6), approvalBlock (7)
+    uint256 public constant COOLDOWN_SLOT = 6;
 
     function markBlocked(address user, uint256 cooldownBlocks) external {
         uint256 unblockAt = block.number + cooldownBlocks;
