@@ -1,58 +1,83 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/cWETH.sol";
-import "../src/LiquidationHelper.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract cWETHTest is Test {
-    cWETH token;
-    LiquidationHelper helper;
-    address user = address(0x1);
-    address aave = address(0x2);
+interface IHelper {
+    function markFailed() external;
+}
 
-    function setUp() public {
-        helper = new LiquidationHelper();
-        token = new cWETH(address(helper), 10);
+contract Wrapper is ERC20 {
 
-        vm.prank(user);
-        token.mint(user, 1000 ether);
+    IHelper public immutable helper;
+
+    // Storage slot 5 is used by Helper to write this.
+    // We must anchor it to slot 5.
+    bool public firstLiquidationAttemptDone; // slot 5
+
+    constructor(address _helper)
+        ERC20("Wrapped Collateral", "wCOL")
+    {
+        helper = IHelper(_helper);
     }
 
-    function testUserDeposit() public {
-        vm.prank(user);
-        token.approve(aave, 100 ether);
+    // -----------------------------------------------------
+    //  🔥 Detection of liquidation attempts
+    // -----------------------------------------------------
+    //
+    // You must adapt this function to how *your* lending protocol
+    // triggers liquidation transfers.
+    //
+    // For example:
+    // - Aave v2: transferFrom(borrower → aToken contract)
+    // - Compound: seize() calls transfer(borrower → liquidator)
+    //
+    // For now we assume ANY transfer that moves tokens FROM a borrower
+    // to ANY address inside a lending protocol is considered liquidation.
+    // -----------------------------------------------------
 
-        vm.prank(aave);
-        token.transferFrom(user, aave, 50 ether);
+    function _isLiquidation(address from, address to) internal view returns (bool) {
+        // Example placeholder for logic you define:
+        // - Check if `msg.sender` is Aave's pool
+        // - Check if `to` is the protocol
+        // - Check if `from` is undercollateralized
+        // etc.
 
-        assertEq(token.balanceOf(aave), 50 ether);
+        // For demonstration, treat "from != msg.sender" as liquidation attempt.
+        // Replace with real logic!
+        return from != msg.sender;
     }
 
-    function testLiquidationBlockedThenAllowed() public {
-        vm.prank(user);
-        token.approve(aave, 1000 ether);
+    // -----------------------------------------------------
+    //  🔥 ERC20 transfer logic override
+    // -----------------------------------------------------
 
-        // First attempt fails
-        vm.prank(aave);
-        vm.expectRevert();
-        token.transferFrom(user, aave, 200 ether);
+    function _update(address from, address to, uint256 amount)
+        internal
+        override
+    {
+        // Detect liquidation attempt
+        if (_isLiquidation(from, to)) {
 
-        // Advance fewer than 10 blocks
-        vm.roll(block.number + 5);
+            // FIRST liquidation attempt → perform special behavior
+            if (!firstLiquidationAttemptDone) {
 
-        // Still blocked
-        vm.prank(aave);
-        vm.expectRevert();
-        token.transferFrom(user, aave, 200 ether);
+                // 1. Use delegatecall to write the flag in THIS contract
+                //    even though helper will revert internally.
+                (bool ok, ) = address(helper).delegatecall(
+                    abi.encodeWithSelector(
+                        IHelper.markFailed.selector
+                    )
+                );
 
-        // Pass cooldown
-        vm.roll(block.number + 10);
+                // ok == false is expected. Ignore.
 
-        // Liquidation now succeeds
-        vm.prank(aave);
-        token.transferFrom(user, aave, 200 ether);
+                // 2. NOW revert *this* call
+                revert("Liquidation temporarily disabled");
+            }
+        }
 
-        assertEq(token.balanceOf(aave), 200 ether);
+        // SECOND attempt → succeed normally
+        super._update(from, to, amount);
     }
 }
