@@ -101,12 +101,19 @@ Different lending protocols have different requirements for adding new collatera
 | **Euler V2** | Permissionless | Instant deployment | Immediate | Permissionless vault creation |
 | **Silo Finance** | Permissionless | Instant deployment | Immediate | Isolated lending markets per asset |
 | **Radiant** | DAO-Governed | Requires governance vote | Weeks | Aave V2 fork with similar governance |
+| **Elara (Zircuit)** | Permissionless | Instant deployment | Immediate | Zerolend fork, supports ERC20 markets |
+| **Purrlend (Zircuit)** | Permissionless | Instant deployment | Immediate | Zerolend fork, isolated markets |
+| **Lambdalend** | Permissionless | Instant deployment | Immediate | Features gradual liquidation (inspiration for this project) |
+| **Money on Chain (Rootstock)** | Stablecoin Protocol | Custom integration | Varies | Dollar on Chain stablecoin with Queue & Flux Capacitor gradual liquidation |
 
 **Immediate Deployment Options:**
-Protocols like Morpho, Euler V2, and Silo Finance allow permissionless market creation, meaning circuit breaker tokens (cWBTC, cUSDC, etc.) can be deployed and used immediately without any governance approval.
+Protocols like Morpho, Euler V2, Silo Finance, Elara, Purrlend, and Lambdalend allow permissionless market creation, meaning circuit breaker tokens (cWBTC, cUSDC, etc.) can be deployed and used immediately without any governance approval.
 
 **DAO Approval Options:**
 For major protocols like Aave and Compound, a governance proposal highlighting the liquidation storm protection would be needed. Multiple tokens can be proposed together (e.g., cWBTC, cUSDC, cDAI) or individually.
+
+**Note on Citrea:**
+Citrea is currently in testnet phase with no production lending protocols deployed yet. Circuit breaker tokens can be deployed once lending protocols launch on mainnet.
 
 ### Phase 1: Initiation & Cooldown
 
@@ -630,6 +637,32 @@ Test coverage includes:
 - [ ] Dashboard showing circuit breaker vs. regular token liquidation statistics
 - [ ] Automated wrapping/unwrapping through aggregators
 - [ ] Batch deployment script for multiple wrapped tokens
+
+## Related Work & Inspiration
+
+This project builds upon and is inspired by existing gradual liquidation mechanisms in DeFi:
+
+### Lambdalend
+**Lambdalend** pioneered the concept of gradual liquidation in lending protocols. Their approach demonstrated that progressive liquidation can significantly reduce liquidation cascade risks while maintaining protocol solvency. This Circuit Breaker Token implementation extends that idea by:
+- Making it **protocol-agnostic** through wrapped tokens
+- Adding **wallet balance consideration** for users with available funds
+- Implementing a **two-phase system** (cooldown + progressive execution)
+- Enabling **permissionless deployment** on any lending protocol
+
+### Money on Chain (Rootstock)
+**Money on Chain's Dollar on Chain** stablecoin system implements sophisticated gradual liquidation mechanisms:
+
+- **Queue System**: Liquidations are queued rather than executed instantly, allowing time for market stabilization and user response
+- **Flux Capacitor**: Manages the rate of liquidations to prevent sudden market shocks, spreading liquidations over time
+
+These mechanisms inspired the time-decay and progressive percentage features in Circuit Breaker Token, adapted for wrapped ERC20 collateral rather than stablecoin-specific use cases.
+
+### Key Innovations
+While inspired by these projects, Circuit Breaker Token introduces:
+1. **Universal applicability**: Works with any ERC20 token and any lending protocol
+2. **Wrapper approach**: No protocol modifications needed
+3. **Time-decay caps**: Balances user protection with protocol security
+4. **Permissionless deployment**: Can be deployed immediately on compatible protocols
 
 ## License
 
