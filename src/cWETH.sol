@@ -4,80 +4,70 @@ pragma solidity ^0.8.20;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface IHelper {
-    function markFailed() external;
+    function markBlocked(address user) external;
 }
 
-contract Wrapper is ERC20 {
+contract cWETH is ERC20 {
 
     IHelper public immutable helper;
 
-    // Storage slot 5 is used by Helper to write this.
-    // We must anchor it to slot 5.
-    bool public firstLiquidationAttemptDone; // slot 5
+    // slot index 1 — matches helper storage layout
+    mapping(address => uint256) public liquidationBlockedUntil;
 
-    constructor(address _helper)
-        ERC20("Wrapped Collateral", "wCOL")
+    address public immutable AAVE_ATOKEN;
+    address public immutable AAVE_POOL;    // liquidation caller
+
+    constructor(address _helper, address _aToken, address _pool)
+        ERC20("Circuit Breaker WETH", "cWETH")
     {
         helper = IHelper(_helper);
+        AAVE_ATOKEN = _aToken;
+        AAVE_POOL   = _pool;
     }
 
     // -----------------------------------------------------
-    //  🔥 Detection of liquidation attempts
+    // 🔥 Detect liquidation transfer
     // -----------------------------------------------------
-    //
-    // You must adapt this function to how *your* lending protocol
-    // triggers liquidation transfers.
-    //
-    // For example:
-    // - Aave v2: transferFrom(borrower → aToken contract)
-    // - Compound: seize() calls transfer(borrower → liquidator)
-    //
-    // For now we assume ANY transfer that moves tokens FROM a borrower
-    // to ANY address inside a lending protocol is considered liquidation.
-    // -----------------------------------------------------
-
-    function _isLiquidation(address from, address to) internal view returns (bool) {
-        // Example placeholder for logic you define:
-        // - Check if `msg.sender` is Aave's pool
-        // - Check if `to` is the protocol
-        // - Check if `from` is undercollateralized
-        // etc.
-
-        // For demonstration, treat "from != msg.sender" as liquidation attempt.
-        // Replace with real logic!
-        return from != msg.sender;
+    function _isLiquidation(address from) internal view returns (bool) {
+        // liquidation: AAVE_ATOKEN calls transferFrom(borrower → ATOKEN)
+        return (msg.sender == AAVE_ATOKEN && from != msg.sender);
     }
 
     // -----------------------------------------------------
-    //  🔥 ERC20 transfer logic override
+    // 🔥 Main logic: per-user circuit breaker
     // -----------------------------------------------------
-
     function _update(address from, address to, uint256 amount)
         internal
         override
     {
-        // Detect liquidation attempt
-        if (_isLiquidation(from, to)) {
+        // 1. Detect liquidation
+        if (_isLiquidation(from)) {
 
-            // FIRST liquidation attempt → perform special behavior
-            if (!firstLiquidationAttemptDone) {
+            uint256 unblockAt = liquidationBlockedUntil[from];
 
-                // 1. Use delegatecall to write the flag in THIS contract
-                //    even though helper will revert internally.
-                (bool ok, ) = address(helper).delegatecall(
+            // 2. If user is still blocked: revert
+            if (block.number < unblockAt) {
+                revert("CircuitBreaker: liquidation blocked");
+            }
+
+            // 3. If this is first attempt: set block and revert
+            if (unblockAt == 0) {
+                (bool ok,) = address(helper).delegatecall(
                     abi.encodeWithSelector(
-                        IHelper.markFailed.selector
+                        IHelper.markBlocked.selector,
+                        from
                     )
                 );
 
-                // ok == false is expected. Ignore.
+                // ok is false (expected). Ignore.
 
-                // 2. NOW revert *this* call
-                revert("Liquidation temporarily disabled");
+                revert("CircuitBreaker: first liquidation attempt fails");
             }
+
+            // 4. After 10 blocks, allow liquidation transfer
         }
 
-        // SECOND attempt → succeed normally
+        // Normal transfer
         super._update(from, to, amount);
     }
 }
