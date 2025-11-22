@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice Interface for protocols to determine if a user position can be liquidated
 interface ILiquidationTarget {
@@ -11,30 +12,54 @@ interface ILiquidationTarget {
     function canLiquidate(address user) external view returns (bool);
 }
 
-/// @title Circuit-Breaker WETH (cWETH)
-contract cWETH is ERC20 {
+/// @title Circuit Breaker Token
+/// @notice Generic wrapper that adds circuit breaker liquidation protection to any ERC20 token
+/// @dev Examples: cWETH (wraps WETH), cUSDC (wraps USDC), cDAI (wraps DAI)
+contract CircuitBreakerToken is ERC20 {
     // ERC20 uses slots 0-4 (_balances, _allowances, _totalSupply, _name, _symbol)
     mapping(address => mapping(address => uint256)) public approvalBlock;         // slot 5
     mapping(address => uint256) public liquidationBlockedUntil;                  // slot 6
     mapping(address => uint256) public liquidationWindowEnd;                     // slot 7
 
+    IERC20 public immutable underlying;
     uint256 public immutable cooldownBlocks;
     uint256 public immutable liquidationWindow;
     ILiquidationTarget public immutable liquidationTarget;
 
     event LiquidationInitiated(address indexed user, uint256 canLiquidateAt, uint256 windowEndsAt);
+    event Deposit(address indexed user, uint256 amount);
+    event Withdraw(address indexed user, uint256 amount);
 
-    constructor(uint256 _cooldown, uint256 _liquidationWindow, address _liquidationTarget)
-        ERC20("Circuit Breaker WETH", "cWETH")
+    constructor(
+        string memory name,
+        string memory symbol,
+        address _underlying,
+        uint256 _cooldown,
+        uint256 _liquidationWindow,
+        address _liquidationTarget
+    )
+        ERC20(name, symbol)
     {
+        underlying = IERC20(_underlying);
         cooldownBlocks = _cooldown;
         liquidationWindow = _liquidationWindow;
         liquidationTarget = ILiquidationTarget(_liquidationTarget);
     }
 
-    /// @notice Mint tokens (for testing purposes)
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
+    /// @notice Deposit underlying tokens and receive wrapped tokens
+    /// @param amount Amount of underlying tokens to deposit
+    function deposit(uint256 amount) external {
+        underlying.transferFrom(msg.sender, address(this), amount);
+        _mint(msg.sender, amount);
+        emit Deposit(msg.sender, amount);
+    }
+
+    /// @notice Withdraw underlying tokens by burning wrapped tokens
+    /// @param amount Amount of wrapped tokens to burn
+    function withdraw(uint256 amount) external {
+        _burn(msg.sender, amount);
+        underlying.transfer(msg.sender, amount);
+        emit Withdraw(msg.sender, amount);
     }
 
     /// @notice Initiate liquidation for a user, starting the cooldown period

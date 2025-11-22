@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {cWETH, ILiquidationTarget} from "./cWETH.sol";
+import {CircuitBreakerToken, ILiquidationTarget} from "./CircuitBreakerToken.sol";
 
 /// @title Example Lending Protocol
-/// @notice Example implementation showing how a lending protocol would integrate with cWETH
+/// @notice Example implementation showing how a lending protocol would integrate with circuit breaker tokens
 contract LendingProtocol is ILiquidationTarget {
     // Health factor threshold (1e18 = 100%)
     uint256 public constant LIQUIDATION_THRESHOLD = 1e18;
@@ -12,10 +12,10 @@ contract LendingProtocol is ILiquidationTarget {
     // User health factors (simplified for example)
     mapping(address => uint256) public healthFactor;
     
-    cWETH public immutable collateralToken;
+    CircuitBreakerToken public immutable collateralToken;
     
     constructor(address _collateralToken) {
-        collateralToken = cWETH(_collateralToken);
+        collateralToken = CircuitBreakerToken(_collateralToken);
     }
     
     /// @notice Set health factor for a user (normally calculated from collateral/debt)
