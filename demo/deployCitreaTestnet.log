@@ -1,24 +1,19 @@
-jordan@p21 circuit-breaker-token % ./deployCitreaTestnet.sh 
-[⠊] Compiling...
-No files changed, compilation skipped
-Script ran successfully.
-
 == Logs ==
   === CIRCUIT BREAKER TOKEN DEPLOYMENT ===
   
   1. Deploying Mock WBTC (underlying asset)...
-     WBTC deployed at: 0xE71C57852392123BbE527A16271D2E6395c66e8b
+     WBTC deployed at: 0x87876361e93346ac59acE9Da86ed1Cee6Bf0E5ed
   
   2. Deploying Sample Lending Protocol (placeholder)...
-     Protocol placeholder deployed at: 0x9112Fb7407f1E4818Cc394644E6165a74e5652A2
+     Protocol placeholder deployed at: 0xB12b792AccD473F9C4A35787eEcd46529249D0cb
   
   3. Deploying Circuit Breaker Token (cWBTC)...
-     Cooldown blocks: 5
-     Liquidation window: 5
-     cWBTC deployed at: 0xD457436EBD456774E44F1Fa468D1D7423cFD9ddE
+     Cooldown blocks: 15
+     Liquidation window: 15
+     cWBTC deployed at: 0xCE1De27853eF6C70cd4c35FB94147F9ED25315E0
   
   4. Deploying Actual Lending Protocol...
-     LendingProtocol deployed at: 0x38288e03211FD049d9A10eC72333d121EBDa8178
+     LendingProtocol deployed at: 0x20A215E723Ce785fa9b7c135c762D848C496072B
   
   === SETUP PHASE ===
   
@@ -38,95 +33,195 @@ Script ran successfully.
   === LIQUIDATION DEMONSTRATION ===
   
   6. Initiating liquidation for Alice (insufficient wallet balance)...
-     Liquidation initiated at block: 18518508
-     Cooldown ends at block: 18518513
-     Window ends at block: 18518518
+     Liquidation initiated at block: 18528058
+     Cooldown ends at block: 18528073
+     Window ends at block: 18528088
   
   7. Simulating progressive liquidation window for Alice...
      Alice's wallet balance (50 WBTC) < collateral (50 cWBTC)
      Wallet/Collateral ratio: 100% -> Gets 50% cap initially
      BUT cap decays to 100% over the window
   
-     Block (cooldown): 18518509
+     Block (cooldown): 18528059
        Percentage: 0
-     Block (cooldown): 18518510
+     Block (cooldown): 18528060
        Percentage: 0
-     Block (cooldown): 18518511
+     Block (cooldown): 18528061
        Percentage: 0
-     Block (cooldown): 18518512
+     Block (cooldown): 18528062
        Percentage: 0
-     Block (cooldown): 18518513
+     Block (cooldown): 18528063
+       Percentage: 0
+     Block (cooldown): 18528064
+       Percentage: 0
+     Block (cooldown): 18528065
+       Percentage: 0
+     Block (cooldown): 18528066
+       Percentage: 0
+     Block (cooldown): 18528067
+       Percentage: 0
+     Block (cooldown): 18528068
+       Percentage: 0
+     Block (cooldown): 18528069
+       Percentage: 0
+     Block (cooldown): 18528070
+       Percentage: 0
+     Block (cooldown): 18528071
+       Percentage: 0
+     Block (cooldown): 18528072
+       Percentage: 0
+     Block (cooldown): 18528073
        Percentage: 10
   
      Cooldown complete! Liquidation window begins:
   
-     Block: 18518513
+     Block: 18528073
        Liquidatable %: 10
-       Amount (cWBTC): 0
-     Block: 18518514
+       Amount (cWBTC): 5
+     Block: 18528074
+       Liquidatable %: 16
+       Amount (cWBTC): 8
+     Block: 18528075
+       Liquidatable %: 22
+       Amount (cWBTC): 11
+     Block: 18528076
        Liquidatable %: 28
-       Amount (cWBTC): 0
-     Block: 18518515
+       Amount (cWBTC): 14
+     Block: 18528077
+       Liquidatable %: 34
+       Amount (cWBTC): 17
+     Block: 18528078
+       Liquidatable %: 40
+       Amount (cWBTC): 20
+     Block: 18528079
        Liquidatable %: 46
-       Amount (cWBTC): 0
-     Block: 18518516
+       Amount (cWBTC): 23
+     Block: 18528080
+       Liquidatable %: 52
+       Amount (cWBTC): 26
+     Block: 18528081
+       Liquidatable %: 58
+       Amount (cWBTC): 29
+     Block: 18528082
        Liquidatable %: 64
-       Amount (cWBTC): 0
-     Block: 18518517
+       Amount (cWBTC): 32
+     Block: 18528083
+       Liquidatable %: 70
+       Amount (cWBTC): 35
+     Block: 18528084
+       Liquidatable %: 76
+       Amount (cWBTC): 38
+     Block: 18528085
        Liquidatable %: 82
-       Amount (cWBTC): 0
-     Block: 18518518
+       Amount (cWBTC): 41
+     Block: 18528086
+       Liquidatable %: 88
+       Amount (cWBTC): 44
+     Block: 18528087
+       Liquidatable %: 94
+       Amount (cWBTC): 47
+     Block: 18528088
        Liquidatable %: 100
-       Amount (cWBTC): 0
+       Amount (cWBTC): 50
   
   8. Initiating liquidation for Bob (has wallet balance)...
-     Liquidation initiated at block: 18518518
+     Liquidation initiated at block: 18528088
   
   9. Simulating progressive liquidation window for Bob...
      Bob's wallet balance (20 WBTC) < collateral (80 cWBTC)
      Wallet/Collateral ratio: 25% -> No cap protection (< 50% threshold)
   
-     Block (cooldown): 18518519
+     Block (cooldown): 18528089
        Percentage: 0
-     Block (cooldown): 18518520
+     Block (cooldown): 18528090
        Percentage: 0
-     Block (cooldown): 18518521
+     Block (cooldown): 18528091
        Percentage: 0
-     Block (cooldown): 18518522
+     Block (cooldown): 18528092
        Percentage: 0
-     Block (cooldown): 18518523
+     Block (cooldown): 18528093
+       Percentage: 0
+     Block (cooldown): 18528094
+       Percentage: 0
+     Block (cooldown): 18528095
+       Percentage: 0
+     Block (cooldown): 18528096
+       Percentage: 0
+     Block (cooldown): 18528097
+       Percentage: 0
+     Block (cooldown): 18528098
+       Percentage: 0
+     Block (cooldown): 18528099
+       Percentage: 0
+     Block (cooldown): 18528100
+       Percentage: 0
+     Block (cooldown): 18528101
+       Percentage: 0
+     Block (cooldown): 18528102
+       Percentage: 0
+     Block (cooldown): 18528103
        Percentage: 10
   
      Cooldown complete! Liquidation window begins:
   
-     Block: 18518523
+     Block: 18528103
        Liquidatable %: 10
-       Amount (cWBTC): 0
-     Block: 18518524
+       Amount (cWBTC): 8
+     Block: 18528104
+       Liquidatable %: 16
+       Amount (cWBTC): 12
+     Block: 18528105
+       Liquidatable %: 22
+       Amount (cWBTC): 17
+     Block: 18528106
        Liquidatable %: 28
-       Amount (cWBTC): 0
-     Block: 18518525
+       Amount (cWBTC): 22
+     Block: 18528107
+       Liquidatable %: 34
+       Amount (cWBTC): 27
+     Block: 18528108
+       Liquidatable %: 40
+       Amount (cWBTC): 32
+     Block: 18528109
        Liquidatable %: 46
-       Amount (cWBTC): 0
-     Block: 18518526
+       Amount (cWBTC): 36
+     Block: 18528110
+       Liquidatable %: 52
+       Amount (cWBTC): 41
+     Block: 18528111
+       Liquidatable %: 58
+       Amount (cWBTC): 46
+     Block: 18528112
        Liquidatable %: 64
-       Amount (cWBTC): 0
-     Block: 18518527
+       Amount (cWBTC): 51
+     Block: 18528113
+       Liquidatable %: 70
+       Amount (cWBTC): 56
+     Block: 18528114
+       Liquidatable %: 76
+       Amount (cWBTC): 60
+     Block: 18528115
        Liquidatable %: 82
-       Amount (cWBTC): 0
-     Block: 18518528
+       Amount (cWBTC): 65
+     Block: 18528116
+       Liquidatable %: 88
+       Amount (cWBTC): 70
+     Block: 18528117
+       Liquidatable %: 94
+       Amount (cWBTC): 75
+     Block: 18528118
        Liquidatable %: 100
-       Amount (cWBTC): 0
+       Amount (cWBTC): 80
   
   === DEPLOYMENT COMPLETE ===
   
   Deployed Contracts:
-    WBTC (Mock): 0xE71C57852392123BbE527A16271D2E6395c66e8b
-    cWBTC (Circuit Breaker): 0xD457436EBD456774E44F1Fa468D1D7423cFD9ddE
-    LendingProtocol: 0x38288e03211FD049d9A10eC72333d121EBDa8178
+    WBTC (Mock): 0x87876361e93346ac59acE9Da86ed1Cee6Bf0E5ed
+    cWBTC (Circuit Breaker): 0xCE1De27853eF6C70cd4c35FB94147F9ED25315E0
+    LendingProtocol: 0x20A215E723Ce785fa9b7c135c762D848C496072B
   
   Key Observations:
-    1. Progressive liquidation grows from 10% to max allowed over 5 blocks
+    1. Progressive liquidation grows from 10% to max allowed over 15 blocks
     2. Users with wallet balance get protection caps that decay over time
     3. Alice (100% ratio) starts at 50% cap, decays to 100%
     4. Bob (25% ratio) has no cap - normal progressive curve
@@ -139,78 +234,78 @@ Script ran successfully.
 
 Chain 5115
 
-Estimated gas price: 0.0020001 gwei
+Estimated gas price: 0.00205005 gwei
 
-Estimated total gas used for script: 3749149
+Estimated total gas used for script: 4091473
 
-Estimated amount required: 0.0000074986729149 ETH
+Estimated amount required: 0.00000838772422365 ETH
 
 ==========================
 
 ##### 5115
-✅  [Success] Hash: 0x4b0f8b84d4107308902b9cdc8afd901c9d74e6cb1a623a12fa31514cba501862
-Contract Address: 0x9112Fb7407f1E4818Cc394644E6165a74e5652A2
-Block: 18518512
-Paid: 0.0000003477637729 ETH (347729 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0xfc474d6d5370fa00e1da52476d6e8e1678d25b63cc9c149efac935de550c4410
+Contract Address: 0xCE1De27853eF6C70cd4c35FB94147F9ED25315E0
+Block: 18528062
+Paid: 0.0000014634420844 ETH (1393688 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0xb71592b5adcc806c17b65bf62c2b661c2d50ed67dcf9f432154cb58a54847925
-Block: 18518512
-Paid: 0.0000000439593955 ETH (43955 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0xc87a0711daa079c3dbe7c2e601e285a14f53fcc7c706b46d7c024ce809dab8ce
+Contract Address: 0xB12b792AccD473F9C4A35787eEcd46529249D0cb
+Block: 18528062
+Paid: 0.00000042433675555 ETH (404111 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0x0b763fef41571f77baceca965c78d413a56aeaaca52a21759b96d7487368c38c
-Block: 18518512
-Paid: 0.0000000814341426 ETH (81426 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0x7032c4092c8c678970634f4a5f6d9b96e493236153619d18e06e725315f3dbeb
+Block: 18528062
+Paid: 0.0000000461664983 ETH (43966 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0x8406f8c5930833741613f607b9cca0d3175bbe4f3852d5157cce9e237becdff0
-Block: 18518512
-Paid: 0.0000000511291124 ETH (51124 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0xcea4fc1d13e394c496e1cafac0fcb55a8bcb16708425a4d08c0784610ce64319
+Block: 18528062
+Paid: 0.0000000461790989 ETH (43978 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0x9e405c4df28819771625b0b53092a23bf3f35eac1c904d00a298abff7c56e7a8
-Block: 18518512
-Paid: 0.0000000814221414 ETH (81414 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0x5c30ea507f3acfa60b41d94f09abe0f385a75bfca6d798ef37b03f8e7552246e
+Block: 18528062
+Paid: 0.0000000536827562 ETH (51124 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0xe60ea2142e492c4aab591abd346c8e9ca68316fec4acc7960ef902a0c65e7c9d
-Contract Address: 0xE71C57852392123BbE527A16271D2E6395c66e8b
-Block: 18518512
-Paid: 0.0000005659645908 ETH (565908 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0x058f0d174f0122c3a57aadbe70e2b339a60b6909a25197148d6ac23f15c6da7f
+Contract Address: 0x20A215E723Ce785fa9b7c135c762D848C496072B
+Block: 18528062
+Paid: 0.00000042457616695 ETH (404339 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0xa5c8e011d9809dbd673fa40330f7f1973bbd16a6574f64d1d205c42a9f373556
-Contract Address: 0xD457436EBD456774E44F1Fa468D1D7423cFD9ddE
-Block: 18518512
-Paid: 0.0000012396259502 ETH (1239502 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0xb5d56efb9f3be75f03f80d570397eeea9e8b3cb0ede2f25da12a21270ce08c50
+Block: 18528062
+Paid: 0.0000000536701556 ETH (51112 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0xa9e9ed0020f446cc1d4d2b578f1703b35982ab91389757256d93448f7bfe681b
-Block: 18518512
-Paid: 0.0000000511171112 ETH (51112 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0xc1cb015a79fa4d72f546ccea5aa7d3e384530d2fc0d0ede29d75aeb7a8714a68
+Block: 18528062
+Paid: 0.000000086188104 ETH (82080 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0xdd7f6af07d4e8bdac756ab019e23f34be319984d32258688809aeb1629b089b2
-Contract Address: 0x38288e03211FD049d9A10eC72333d121EBDa8178
-Block: 18518512
-Paid: 0.0000003479917957 ETH (347957 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0x7bcdd4bea5218c97968107cbf386f4950639a1e751a7e45c500bf39bf49a734b
+Block: 18528062
+Paid: 0.0000000862007046 ETH (82092 gas * 0.00105005 gwei)
 
 
 ##### 5115
-✅  [Success] Hash: 0xac95a1ae3f4296e2f6e7d98abafd3496e592edd34281e14aa2124e9623b0f1ee
-Block: 18518512
-Paid: 0.0000000439473943 ETH (43943 gas * 0.0010001 gwei)
+✅  [Success] Hash: 0x306fee9f082ad2435f3ec2901256bf8e34f04364dc8092b28ac3dc3e4e3a2913
+Contract Address: 0x87876361e93346ac59acE9Da86ed1Cee6Bf0E5ed
+Block: 18528062
+Paid: 0.0000005942316954 ETH (565908 gas * 0.00105005 gwei)
 
-✅ Sequence #1 on 5115 | Total Paid: 0.000002854355407 ETH (2854070 gas * avg 0.0010001 gwei)
+✅ Sequence #1 on 5115 | Total Paid: 0.0000032786740199 ETH (3122398 gas * avg 0.00105005 gwei)
                                                                                                   
 
 ==========================

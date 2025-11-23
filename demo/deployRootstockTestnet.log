@@ -1,514 +1,19 @@
-jordan@p21 circuit-breaker-token % ./deployRootstockTestnet.sh 
-[⠊] Compiling...
-No files changed, compilation skipped
-Traces:
-  [2959481] Deploy::run()
-    ├─ [0] VM::startBroadcast()
-    │   └─ ← [Return]
-    ├─ [0] console::log("=== CIRCUIT BREAKER TOKEN DEPLOYMENT ===") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("1. Deploying Mock WBTC (underlying asset)...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [468612] → new MockWBTC@0x20A215E723Ce785fa9b7c135c762D848C496072B
-    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x823eF872d97f3Cffd1e3D491c9560EB0D3886D56, value: 1000000000000000000000 [1e21])
-    │   └─ ← [Return] 1883 bytes of code
-    ├─ [0] console::log("   WBTC deployed at:", MockWBTC: [0x20A215E723Ce785fa9b7c135c762D848C496072B]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("2. Deploying Sample Lending Protocol (placeholder)...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [272175] → new LendingProtocol@0x9564a8891EC6099abBb51Bee2D2627510177a894
-    │   └─ ← [Return] 1358 bytes of code
-    ├─ [0] console::log("   Protocol placeholder deployed at:", LendingProtocol: [0x9564a8891EC6099abBb51Bee2D2627510177a894]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("3. Deploying Circuit Breaker Token (cWBTC)...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Cooldown blocks:", 5) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Liquidation window:", 5) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [1091116] → new CircuitBreakerToken@0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442
-    │   └─ ← [Return] 5217 bytes of code
-    ├─ [0] console::log("   cWBTC deployed at:", CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("4. Deploying Actual Lending Protocol...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [272175] → new LendingProtocol@0x7b3edD4a3b0aB650B12482C9a0502373479A9715
-    │   └─ ← [Return] 1358 bytes of code
-    ├─ [0] console::log("   LendingProtocol deployed at:", LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("=== SETUP PHASE ===") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("5. Setting up test users (Alice and Bob)...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [24884] MockWBTC::mint(0x00000000000000000000000000000000000A11cE, 100000000000000000000 [1e20])
-    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x00000000000000000000000000000000000A11cE, value: 100000000000000000000 [1e20])
-    │   └─ ← [Stop]
-    ├─ [24884] MockWBTC::mint(0x0000000000000000000000000000000000000B0b, 100000000000000000000 [1e20])
-    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x0000000000000000000000000000000000000B0b, value: 100000000000000000000 [1e20])
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Minted 100 WBTC to Alice:", 0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Minted 100 WBTC to Bob:", 0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::stopBroadcast()
-    │   └─ ← [Return]
-    ├─ [0] VM::startPrank(0x00000000000000000000000000000000000A11cE)
-    │   └─ ← [Return]
-    ├─ [24735] MockWBTC::approve(CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], 50000000000000000000 [5e19])
-    │   ├─ emit Approval(owner: 0x00000000000000000000000000000000000A11cE, spender: CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], value: 50000000000000000000 [5e19])
-    │   └─ ← [Return] true
-    ├─ [74797] CircuitBreakerToken::deposit(50000000000000000000 [5e19])
-    │   ├─ [26054] MockWBTC::transferFrom(0x00000000000000000000000000000000000A11cE, CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], 50000000000000000000 [5e19])
-    │   │   ├─ emit Transfer(from: 0x00000000000000000000000000000000000A11cE, to: CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], value: 50000000000000000000 [5e19])
-    │   │   └─ ← [Return] true
-    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x00000000000000000000000000000000000A11cE, value: 50000000000000000000 [5e19])
-    │   ├─ emit Deposit(user: 0x00000000000000000000000000000000000A11cE, amount: 50000000000000000000 [5e19])
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Alice deposited 50 WBTC, received 50 cWBTC") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Alice's remaining wallet: 50 WBTC (insufficient for full collateral)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [47054] CircuitBreakerToken::approve(LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], 50000000000000000000 [5e19])
-    │   ├─ emit Approval(owner: 0x00000000000000000000000000000000000A11cE, spender: LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], value: 50000000000000000000 [5e19])
-    │   └─ ← [Return] true
-    ├─ [49459] LendingProtocol::depositCollateral(50000000000000000000 [5e19])
-    │   ├─ [26482] CircuitBreakerToken::transferFrom(0x00000000000000000000000000000000000A11cE, LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], 50000000000000000000 [5e19])
-    │   │   ├─ emit Transfer(from: 0x00000000000000000000000000000000000A11cE, to: LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], value: 50000000000000000000 [5e19])
-    │   │   └─ ← [Return] true
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Alice deposited 50 cWBTC as collateral in protocol") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::stopPrank()
-    │   └─ ← [Return]
-    ├─ [0] VM::startBroadcast()
-    │   └─ ← [Return]
-    ├─ [22527] LendingProtocol::setHealthFactor(0x00000000000000000000000000000000000A11cE, 800000000000000000 [8e17])
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Alice's health factor set to 80% (UNHEALTHY - can be liquidated)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::stopBroadcast()
-    │   └─ ← [Return]
-    ├─ [0] VM::startPrank(0x0000000000000000000000000000000000000B0b)
-    │   └─ ← [Return]
-    ├─ [24735] MockWBTC::approve(CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], 80000000000000000000 [8e19])
-    │   ├─ emit Approval(owner: 0x0000000000000000000000000000000000000B0b, spender: CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], value: 80000000000000000000 [8e19])
-    │   └─ ← [Return] true
-    ├─ [30997] CircuitBreakerToken::deposit(80000000000000000000 [8e19])
-    │   ├─ [4154] MockWBTC::transferFrom(0x0000000000000000000000000000000000000B0b, CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], 80000000000000000000 [8e19])
-    │   │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000B0b, to: CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442], value: 80000000000000000000 [8e19])
-    │   │   └─ ← [Return] true
-    │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x0000000000000000000000000000000000000B0b, value: 80000000000000000000 [8e19])
-    │   ├─ emit Deposit(user: 0x0000000000000000000000000000000000000B0b, amount: 80000000000000000000 [8e19])
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Bob deposited 80 WBTC, received 80 cWBTC") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Bob's remaining wallet: 20 WBTC (insufficient for full collateral)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [47054] CircuitBreakerToken::approve(LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], 80000000000000000000 [8e19])
-    │   ├─ emit Approval(owner: 0x0000000000000000000000000000000000000B0b, spender: LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], value: 80000000000000000000 [8e19])
-    │   └─ ← [Return] true
-    ├─ [27559] LendingProtocol::depositCollateral(80000000000000000000 [8e19])
-    │   ├─ [4582] CircuitBreakerToken::transferFrom(0x0000000000000000000000000000000000000B0b, LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], 80000000000000000000 [8e19])
-    │   │   ├─ emit Transfer(from: 0x0000000000000000000000000000000000000B0b, to: LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715], value: 80000000000000000000 [8e19])
-    │   │   └─ ← [Return] true
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Bob deposited 80 cWBTC as collateral in protocol") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::stopPrank()
-    │   └─ ← [Return]
-    ├─ [0] VM::startBroadcast()
-    │   └─ ← [Return]
-    ├─ [22527] LendingProtocol::setHealthFactor(0x0000000000000000000000000000000000000B0b, 900000000000000000 [9e17])
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Bob's health factor set to 90% (UNHEALTHY - can be liquidated)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("=== LIQUIDATION DEMONSTRATION ===") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("6. Initiating liquidation for Alice (insufficient wallet balance)...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [53198] LendingProtocol::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
-    │   ├─ [52500] CircuitBreakerToken::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
-    │   │   ├─ [2571] LendingProtocol::canLiquidate(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   │   └─ ← [Return] true
-    │   │   ├─ emit LiquidationInitiated(user: 0x00000000000000000000000000000000000A11cE, canLiquidateAt: 7057856 [7.057e6], windowEndsAt: 7057861 [7.057e6], maxAmount: 0)
-    │   │   └─ ← [Stop]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Liquidation initiated at block:", 7057851 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Cooldown ends at block:", 7057856 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Window ends at block:", 7057861 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("7. Simulating progressive liquidation window for Alice...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Alice's wallet balance (50 WBTC) < collateral (50 cWBTC)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Wallet/Collateral ratio: 100% -> Gets 50% cap initially") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   BUT cap decays to 100% over the window") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057852 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057852 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057853 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057853 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057854 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057854 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057855 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057855 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057856 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [5631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [2590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 10, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057856 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 10) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Cooldown complete! Liquidation window begins:") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 10, 0
-    ├─ [0] console::log("   Block:", 7057856 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 10) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057857 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 28, 0
-    ├─ [0] console::log("   Block:", 7057857 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 28) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057858 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 46, 0
-    ├─ [0] console::log("   Block:", 7057858 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 46) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057859 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 64, 0
-    ├─ [0] console::log("   Block:", 7057859 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 64) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057860 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 82, 0
-    ├─ [0] console::log("   Block:", 7057860 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 82) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057861 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 50000000000000000000 [5e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 100, 0
-    ├─ [0] console::log("   Block:", 7057861 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 100) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("8. Initiating liquidation for Bob (has wallet balance)...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [53198] LendingProtocol::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
-    │   ├─ [52500] CircuitBreakerToken::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
-    │   │   ├─ [2571] LendingProtocol::canLiquidate(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   │   └─ ← [Return] true
-    │   │   ├─ emit LiquidationInitiated(user: 0x0000000000000000000000000000000000000B0b, canLiquidateAt: 7057866 [7.057e6], windowEndsAt: 7057871 [7.057e6], maxAmount: 0)
-    │   │   └─ ← [Stop]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Liquidation initiated at block:", 7057861 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("9. Simulating progressive liquidation window for Bob...") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Bob's wallet balance (20 WBTC) < collateral (80 cWBTC)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Wallet/Collateral ratio: 25% -> No cap protection (< 50% threshold)") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057862 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057862 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057863 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057863 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057864 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057864 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057865 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [865] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   └─ ← [Return] 0, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057865 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057866 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [5631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [2590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 10, 0
-    ├─ [0] console::log("   Block (cooldown):", 7057866 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Percentage:", 10) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("   Cooldown complete! Liquidation window begins:") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 10, 0
-    ├─ [0] console::log("   Block:", 7057866 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 10) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057867 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 28, 0
-    ├─ [0] console::log("   Block:", 7057867 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 28) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057868 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 46, 0
-    ├─ [0] console::log("   Block:", 7057868 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 46) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057869 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 64, 0
-    ├─ [0] console::log("   Block:", 7057869 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 64) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057870 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 82, 0
-    ├─ [0] console::log("   Block:", 7057870 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 82) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::roll(7057871 [7.057e6])
-    │   └─ ← [Return]
-    ├─ [3631] CircuitBreakerToken::getLiquidatableAmount(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   ├─ [559] MockWBTC::balanceOf(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 20000000000000000000 [2e19]
-    │   ├─ [590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
-    │   │   └─ ← [Return] 0
-    │   └─ ← [Return] 100, 0
-    ├─ [0] console::log("   Block:", 7057871 [7.057e6]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Liquidatable %:", 100) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("     Amount (cWBTC):", 0) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("=== DEPLOYMENT COMPLETE ===") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("Deployed Contracts:") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  WBTC (Mock):", MockWBTC: [0x20A215E723Ce785fa9b7c135c762D848C496072B]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  cWBTC (Circuit Breaker):", CircuitBreakerToken: [0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  LendingProtocol:", LendingProtocol: [0x7b3edD4a3b0aB650B12482C9a0502373479A9715]) [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("Key Observations:") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  1. Progressive liquidation grows from 10% to max allowed over", 5, "blocks") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  2. Users with wallet balance get protection caps that decay over time") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  3. Alice (100% ratio) starts at 50% cap, decays to 100%") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  4. Bob (25% ratio) has no cap - normal progressive curve") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("  5. This mechanism balances user protection with protocol solvency") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] console::log("") [staticcall]
-    │   └─ ← [Stop]
-    ├─ [0] VM::stopBroadcast()
-    │   └─ ← [Return]
-    └─ ← [Stop]
-
-
-Script ran successfully.
-
 == Logs ==
   === CIRCUIT BREAKER TOKEN DEPLOYMENT ===
   
   1. Deploying Mock WBTC (underlying asset)...
-     WBTC deployed at: 0x20A215E723Ce785fa9b7c135c762D848C496072B
+     WBTC deployed at: 0x81a2e35Ce5730Fc0B10730A6Ecd0f890CB20012F
   
   2. Deploying Sample Lending Protocol (placeholder)...
-     Protocol placeholder deployed at: 0x9564a8891EC6099abBb51Bee2D2627510177a894
+     Protocol placeholder deployed at: 0x5254605C60AfB2D77cbfA35E0De60467ce622BB8
   
   3. Deploying Circuit Breaker Token (cWBTC)...
-     Cooldown blocks: 5
-     Liquidation window: 5
-     cWBTC deployed at: 0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442
+     Cooldown blocks: 15
+     Liquidation window: 15
+     cWBTC deployed at: 0x0888091227379c6e5719859F7A39024edA454E20
   
   4. Deploying Actual Lending Protocol...
-     LendingProtocol deployed at: 0x7b3edD4a3b0aB650B12482C9a0502373479A9715
+     LendingProtocol deployed at: 0xE28C059f74e0044C01bD06e9B0A2642D5d1717e6
   
   === SETUP PHASE ===
   
@@ -528,95 +33,195 @@ Script ran successfully.
   === LIQUIDATION DEMONSTRATION ===
   
   6. Initiating liquidation for Alice (insufficient wallet balance)...
-     Liquidation initiated at block: 7057851
-     Cooldown ends at block: 7057856
-     Window ends at block: 7057861
+     Liquidation initiated at block: 7058551
+     Cooldown ends at block: 7058566
+     Window ends at block: 7058581
   
   7. Simulating progressive liquidation window for Alice...
      Alice's wallet balance (50 WBTC) < collateral (50 cWBTC)
      Wallet/Collateral ratio: 100% -> Gets 50% cap initially
      BUT cap decays to 100% over the window
   
-     Block (cooldown): 7057852
+     Block (cooldown): 7058552
        Percentage: 0
-     Block (cooldown): 7057853
+     Block (cooldown): 7058553
        Percentage: 0
-     Block (cooldown): 7057854
+     Block (cooldown): 7058554
        Percentage: 0
-     Block (cooldown): 7057855
+     Block (cooldown): 7058555
        Percentage: 0
-     Block (cooldown): 7057856
+     Block (cooldown): 7058556
+       Percentage: 0
+     Block (cooldown): 7058557
+       Percentage: 0
+     Block (cooldown): 7058558
+       Percentage: 0
+     Block (cooldown): 7058559
+       Percentage: 0
+     Block (cooldown): 7058560
+       Percentage: 0
+     Block (cooldown): 7058561
+       Percentage: 0
+     Block (cooldown): 7058562
+       Percentage: 0
+     Block (cooldown): 7058563
+       Percentage: 0
+     Block (cooldown): 7058564
+       Percentage: 0
+     Block (cooldown): 7058565
+       Percentage: 0
+     Block (cooldown): 7058566
        Percentage: 10
   
      Cooldown complete! Liquidation window begins:
   
-     Block: 7057856
+     Block: 7058566
        Liquidatable %: 10
-       Amount (cWBTC): 0
-     Block: 7057857
+       Amount (cWBTC): 5
+     Block: 7058567
+       Liquidatable %: 16
+       Amount (cWBTC): 8
+     Block: 7058568
+       Liquidatable %: 22
+       Amount (cWBTC): 11
+     Block: 7058569
        Liquidatable %: 28
-       Amount (cWBTC): 0
-     Block: 7057858
+       Amount (cWBTC): 14
+     Block: 7058570
+       Liquidatable %: 34
+       Amount (cWBTC): 17
+     Block: 7058571
+       Liquidatable %: 40
+       Amount (cWBTC): 20
+     Block: 7058572
        Liquidatable %: 46
-       Amount (cWBTC): 0
-     Block: 7057859
+       Amount (cWBTC): 23
+     Block: 7058573
+       Liquidatable %: 52
+       Amount (cWBTC): 26
+     Block: 7058574
+       Liquidatable %: 58
+       Amount (cWBTC): 29
+     Block: 7058575
        Liquidatable %: 64
-       Amount (cWBTC): 0
-     Block: 7057860
+       Amount (cWBTC): 32
+     Block: 7058576
+       Liquidatable %: 70
+       Amount (cWBTC): 35
+     Block: 7058577
+       Liquidatable %: 76
+       Amount (cWBTC): 38
+     Block: 7058578
        Liquidatable %: 82
-       Amount (cWBTC): 0
-     Block: 7057861
+       Amount (cWBTC): 41
+     Block: 7058579
+       Liquidatable %: 88
+       Amount (cWBTC): 44
+     Block: 7058580
+       Liquidatable %: 94
+       Amount (cWBTC): 47
+     Block: 7058581
        Liquidatable %: 100
-       Amount (cWBTC): 0
+       Amount (cWBTC): 50
   
   8. Initiating liquidation for Bob (has wallet balance)...
-     Liquidation initiated at block: 7057861
+     Liquidation initiated at block: 7058581
   
   9. Simulating progressive liquidation window for Bob...
      Bob's wallet balance (20 WBTC) < collateral (80 cWBTC)
      Wallet/Collateral ratio: 25% -> No cap protection (< 50% threshold)
   
-     Block (cooldown): 7057862
+     Block (cooldown): 7058582
        Percentage: 0
-     Block (cooldown): 7057863
+     Block (cooldown): 7058583
        Percentage: 0
-     Block (cooldown): 7057864
+     Block (cooldown): 7058584
        Percentage: 0
-     Block (cooldown): 7057865
+     Block (cooldown): 7058585
        Percentage: 0
-     Block (cooldown): 7057866
+     Block (cooldown): 7058586
+       Percentage: 0
+     Block (cooldown): 7058587
+       Percentage: 0
+     Block (cooldown): 7058588
+       Percentage: 0
+     Block (cooldown): 7058589
+       Percentage: 0
+     Block (cooldown): 7058590
+       Percentage: 0
+     Block (cooldown): 7058591
+       Percentage: 0
+     Block (cooldown): 7058592
+       Percentage: 0
+     Block (cooldown): 7058593
+       Percentage: 0
+     Block (cooldown): 7058594
+       Percentage: 0
+     Block (cooldown): 7058595
+       Percentage: 0
+     Block (cooldown): 7058596
        Percentage: 10
   
      Cooldown complete! Liquidation window begins:
   
-     Block: 7057866
+     Block: 7058596
        Liquidatable %: 10
-       Amount (cWBTC): 0
-     Block: 7057867
+       Amount (cWBTC): 8
+     Block: 7058597
+       Liquidatable %: 16
+       Amount (cWBTC): 12
+     Block: 7058598
+       Liquidatable %: 22
+       Amount (cWBTC): 17
+     Block: 7058599
        Liquidatable %: 28
-       Amount (cWBTC): 0
-     Block: 7057868
+       Amount (cWBTC): 22
+     Block: 7058600
+       Liquidatable %: 34
+       Amount (cWBTC): 27
+     Block: 7058601
+       Liquidatable %: 40
+       Amount (cWBTC): 32
+     Block: 7058602
        Liquidatable %: 46
-       Amount (cWBTC): 0
-     Block: 7057869
+       Amount (cWBTC): 36
+     Block: 7058603
+       Liquidatable %: 52
+       Amount (cWBTC): 41
+     Block: 7058604
+       Liquidatable %: 58
+       Amount (cWBTC): 46
+     Block: 7058605
        Liquidatable %: 64
-       Amount (cWBTC): 0
-     Block: 7057870
+       Amount (cWBTC): 51
+     Block: 7058606
+       Liquidatable %: 70
+       Amount (cWBTC): 56
+     Block: 7058607
+       Liquidatable %: 76
+       Amount (cWBTC): 60
+     Block: 7058608
        Liquidatable %: 82
-       Amount (cWBTC): 0
-     Block: 7057871
+       Amount (cWBTC): 65
+     Block: 7058609
+       Liquidatable %: 88
+       Amount (cWBTC): 70
+     Block: 7058610
+       Liquidatable %: 94
+       Amount (cWBTC): 75
+     Block: 7058611
        Liquidatable %: 100
-       Amount (cWBTC): 0
+       Amount (cWBTC): 80
   
   === DEPLOYMENT COMPLETE ===
   
   Deployed Contracts:
-    WBTC (Mock): 0x20A215E723Ce785fa9b7c135c762D848C496072B
-    cWBTC (Circuit Breaker): 0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442
-    LendingProtocol: 0x7b3edD4a3b0aB650B12482C9a0502373479A9715
+    WBTC (Mock): 0x81a2e35Ce5730Fc0B10730A6Ecd0f890CB20012F
+    cWBTC (Circuit Breaker): 0x0888091227379c6e5719859F7A39024edA454E20
+    LendingProtocol: 0xE28C059f74e0044C01bD06e9B0A2642D5d1717e6
   
   Key Observations:
-    1. Progressive liquidation grows from 10% to max allowed over 5 blocks
+    1. Progressive liquidation grows from 10% to max allowed over 15 blocks
     2. Users with wallet balance get protection caps that decay over time
     3. Alice (100% ratio) starts at 50% cap, decays to 100%
     4. Bob (25% ratio) has no cap - normal progressive curve
@@ -627,18 +232,18 @@ Script ran successfully.
 ==========================
 Simulated On-chain Traces:
 
-  [468612] → new MockWBTC@0x20A215E723Ce785fa9b7c135c762D848C496072B
+  [468612] → new MockWBTC@0x81a2e35Ce5730Fc0B10730A6Ecd0f890CB20012F
     ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x823eF872d97f3Cffd1e3D491c9560EB0D3886D56, value: 1000000000000000000000 [1e21])
     └─ ← [Return] 1883 bytes of code
 
-  [272175] → new LendingProtocol@0x9564a8891EC6099abBb51Bee2D2627510177a894
-    └─ ← [Return] 1358 bytes of code
+  [324889] → new LendingProtocol@0x5254605C60AfB2D77cbfA35E0De60467ce622BB8
+    └─ ← [Return] 1511 bytes of code
 
-  [1091116] → new CircuitBreakerToken@0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442
-    └─ ← [Return] 5217 bytes of code
+  [1234708] → new CircuitBreakerToken@0x0888091227379c6e5719859F7A39024edA454E20
+    └─ ← [Return] 5934 bytes of code
 
-  [272175] → new LendingProtocol@0x7b3edD4a3b0aB650B12482C9a0502373479A9715
-    └─ ← [Return] 1358 bytes of code
+  [324889] → new LendingProtocol@0xE28C059f74e0044C01bD06e9B0A2642D5d1717e6
+    └─ ← [Return] 1511 bytes of code
 
   [29684] MockWBTC::mint(0x00000000000000000000000000000000000A11cE, 100000000000000000000 [1e20])
     ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x00000000000000000000000000000000000A11cE, value: 100000000000000000000 [1e20])
@@ -648,25 +253,29 @@ Simulated On-chain Traces:
     ├─ emit Transfer(from: 0x0000000000000000000000000000000000000000, to: 0x0000000000000000000000000000000000000B0b, value: 100000000000000000000 [1e20])
     └─ ← [Stop]
 
-  [22527] LendingProtocol::setHealthFactor(0x00000000000000000000000000000000000A11cE, 800000000000000000 [8e17])
+  [22550] LendingProtocol::setHealthFactor(0x00000000000000000000000000000000000A11cE, 800000000000000000 [8e17])
     └─ ← [Stop]
 
-  [22527] LendingProtocol::setHealthFactor(0x0000000000000000000000000000000000000B0b, 900000000000000000 [9e17])
+  [22550] LendingProtocol::setHealthFactor(0x0000000000000000000000000000000000000B0b, 900000000000000000 [9e17])
     └─ ← [Stop]
 
-  [60198] LendingProtocol::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
-    ├─ [57000] CircuitBreakerToken::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
+  [60864] LendingProtocol::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
+    ├─ [55560] CircuitBreakerToken::initiateLiquidation(0x00000000000000000000000000000000000A11cE)
     │   ├─ [2571] LendingProtocol::canLiquidate(0x00000000000000000000000000000000000A11cE) [staticcall]
     │   │   └─ ← [Return] true
-    │   ├─ emit LiquidationInitiated(user: 0x00000000000000000000000000000000000A11cE, canLiquidateAt: 7057856 [7.057e6], windowEndsAt: 7057861 [7.057e6], maxAmount: 0)
+    │   ├─ [2590] LendingProtocol::getUserCollateral(0x00000000000000000000000000000000000A11cE) [staticcall]
+    │   │   └─ ← [Return] 0
+    │   ├─ emit LiquidationInitiated(user: 0x00000000000000000000000000000000000A11cE, canLiquidateAt: 7058566 [7.058e6], windowEndsAt: 7058581 [7.058e6], maxAmount: 0)
     │   └─ ← [Stop]
     └─ ← [Stop]
 
-  [60198] LendingProtocol::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
-    ├─ [57000] CircuitBreakerToken::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
+  [60864] LendingProtocol::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
+    ├─ [55560] CircuitBreakerToken::initiateLiquidation(0x0000000000000000000000000000000000000B0b)
     │   ├─ [2571] LendingProtocol::canLiquidate(0x0000000000000000000000000000000000000B0b) [staticcall]
     │   │   └─ ← [Return] true
-    │   ├─ emit LiquidationInitiated(user: 0x0000000000000000000000000000000000000B0b, canLiquidateAt: 7057856 [7.057e6], windowEndsAt: 7057861 [7.057e6], maxAmount: 0)
+    │   ├─ [2590] LendingProtocol::getUserCollateral(0x0000000000000000000000000000000000000B0b) [staticcall]
+    │   │   └─ ← [Return] 0
+    │   ├─ emit LiquidationInitiated(user: 0x0000000000000000000000000000000000000B0b, canLiquidateAt: 7058566 [7.058e6], windowEndsAt: 7058581 [7.058e6], maxAmount: 0)
     │   └─ ← [Stop]
     └─ ← [Stop]
 
@@ -675,78 +284,78 @@ Simulated On-chain Traces:
 
 Chain 31
 
-Estimated gas price: 0.026062993 gwei
+Estimated gas price: 0.025799783 gwei
 
-Estimated total gas used for script: 3749149
+Estimated total gas used for script: 4091473
 
-Estimated amount required: 0.000097714044142957 tRBTC
+Estimated amount required: 0.000105559115550359 tRBTC
 
 ==========================
 
 ##### rsk-testnet
-✅  [Success] Hash: 0x4676090538e4aadc6da61f795c7722592db2e88e51b21d66e5cf0358fbe6686c
-Contract Address: 0x9564a8891EC6099abBb51Bee2D2627510177a894
-Block: 7057853
-Gas Used: 347729
+✅  [Success] Hash: 0x4b468a9ebd56f207eb2d435e67b7cfc9d0f4b952d23d892ff3c84e14bd7e5bde
+Contract Address: 0x5254605C60AfB2D77cbfA35E0De60467ce622BB8
+Block: 7058553
+Gas Used: 402211
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0xe5552734342287f21714fb29815d0fa22f300d24854a6d3a83a30360d66a91f5
-Contract Address: 0x20A215E723Ce785fa9b7c135c762D848C496072B
-Block: 7057853
+✅  [Success] Hash: 0x7ac9b83ab503d6d34980548bc1816d2032f5649a9f33c44160e36c80eae6c185
+Contract Address: 0x0888091227379c6e5719859F7A39024edA454E20
+Block: 7058553
+Gas Used: 1389888
+
+
+##### rsk-testnet
+✅  [Success] Hash: 0x8a9027a3ac1715e42d8237e7a89324b0d3cffbadf96f253b150727b0b2cc38d6
+Contract Address: 0x81a2e35Ce5730Fc0B10730A6Ecd0f890CB20012F
+Block: 7058553
 Gas Used: 558308
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0xc9ab6338d9daefc57ad05f4531ed10c77b17c7dd76d3c513ccd634d8c5e8f50b
-Contract Address: 0x9C31112c0323E22dF4AAA995c556c9c4b7cCD442
-Block: 7057853
-Gas Used: 1235702
+✅  [Success] Hash: 0x2b6602ca3db6863d13204100338356846e2acedb1e8abab362167b3374c4686b
+Block: 7058553
+Gas Used: 41866
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0xc2526da09d7ee27e90ee099e16be53cf47dd4501a23818c3d6970f9c1c2405c4
-Contract Address: 0x7b3edD4a3b0aB650B12482C9a0502373479A9715
-Block: 7057853
-Gas Used: 347957
+✅  [Success] Hash: 0x8823a21048b5d2c3438addf30cfa37c005061fb36ca46c16b2bd10a1c71d4c37
+Contract Address: 0xE28C059f74e0044C01bD06e9B0A2642D5d1717e6
+Block: 7058553
+Gas Used: 402439
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0xaea1dc0c4aacce78524c07cbe236be6ec5bfc6acc311d035500181da472b11d3
-Block: 7057853
-Gas Used: 41843
+✅  [Success] Hash: 0xf2b8b876d0028201a3acdd25dc41a7d334324cd156196a4e2c3e8f96fe3e9587
+Block: 7058553
+Gas Used: 41878
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0x804db88bf621617fa9f50951975cc9e90b1bc665441d372f3deaab138c62c0c9
-Block: 7057853
-Gas Used: 41855
-
-
-##### rsk-testnet
-✅  [Success] Hash: 0xe892219e174cf52e30e173bb5a15a62e47fd5122ad0393b0336d482a79d88fc7
-Block: 7057853
+✅  [Success] Hash: 0xcb699aad3ea14fd03c18e0856de87d76f419b6d564208caa48a45356daf22080
+Block: 7058553
 Gas Used: 49424
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0x5aa826aebca61c6a3f973b83f734196347f3d2fe33dbae59504dad0cae3740ae
-Block: 7057853
+✅  [Success] Hash: 0x0f47b88ea0f4d3d3862c2e135add0c8cab36bbfc206199f5053ec86e8512db19
+Block: 7058553
+Gas Used: 75692
+
+
+##### rsk-testnet
+✅  [Success] Hash: 0xa627c0e451b17419c8bbd643954d2f9a0c10b39fe74bcd0a5733733e7806e359
+Block: 7058553
 Gas Used: 49412
 
 
 ##### rsk-testnet
-✅  [Success] Hash: 0x5a39f394d3802fb61fb83ac305119ceacc74b9558c1f9330ae3947ec1350165e
-Block: 7057853
-Gas Used: 73226
+✅  [Success] Hash: 0x795b176c1787d4f644e7f18f0216224436ee2576018e3b1770b4793609acf6b9
+Block: 7058553
+Gas Used: 75680
 
-
-##### rsk-testnet
-✅  [Success] Hash: 0x27f587085baaaf07d2be5e3dffdf9cf2cd0fe1cc32c01e3679c707ff62b4291d
-Block: 7057853
-Gas Used: 73214
-
-✅ Sequence #1 on rsk-testnet | Total Paid: 0. tRBTC (2818670 gas * avg 0 gwei)
+✅ Sequence #1 on rsk-testnet | Total Paid: 0. tRBTC (3086798 gas * avg 0 gwei)
                                                                                                   
 
 ==========================
