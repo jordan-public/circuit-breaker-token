@@ -2,6 +2,8 @@
 
 ## Video Demo
 
+The demo video can be found [here](./LCB.mov) and on [YouTube](https://youtu.be/d3jwEw0mzD8).
+
 ## Deployment addresses
 
 - Zircuit Garfield Testnet: 
