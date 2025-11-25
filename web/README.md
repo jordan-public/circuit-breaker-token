@@ -1,3 +1,11 @@
+[This project](https://ethglobal.com/showcase/liquidation-ckt-brkr-yn7ny) won the following prizes at the [ETHGlobal Buenos Aires 2025](https://ethglobal.com/events/buenosaires) hackathon:
+
+🏆 [Zircuit - Best DeFi Project on Zircuit 1st place](https://ethglobal.com/showcase/liquidation-ckt-brkr-yn7ny)
+
+🏆 [Rootstock - Everyday DeFi](https://ethglobal.com/showcase/liquidation-ckt-brkr-yn7ny)
+
+🥈 [Citrea - All-In Bitcoin 2nd place](https://ethglobal.com/showcase/liquidation-ckt-brkr-yn7ny)
+
 # Circuit Breaker Token - Web Interface
 
 A web-based dashboard for interacting with the Circuit Breaker Token liquidation system.
